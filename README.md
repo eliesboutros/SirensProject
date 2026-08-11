@@ -1,5 +1,15 @@
 # C-IED Incident Link Analysis
 
+> **Quickstart (easiest way — do this):**
+> ```bash
+> bash setup.sh        # one time: installs everything (Linux/macOS)
+> source .venv/bin/activate
+> python sirens.py     # opens a simple menu — just pick a number
+> ```
+> On Windows, create the environment with `python -m venv .venv`, activate it
+> with `.venv\Scripts\activate`, run the two `pip install` lines under *Install*
+> below, then `python sirens.py`.
+
 **Entity extraction, recognition & matching (record linkage) for counter-IED
 analysis.** Ingest incident reports, pull out the descriptive features analysts
 already write down, and surface which events share a *signature* — the kind of

@@ -119,3 +119,26 @@ def test_area_brief_retrieves_objects_and_stays_in_lane():
     assert b.responder_photo == "snap.jpg"      # attached, passed through
     # The brief must carry its retrieval-not-identification boundary.
     assert "not identification" in b.note and "specialist" in b.note
+
+
+def test_ner_noise_filtered():
+    # Unit tokens and place phrases must not become persons/groups.
+    inc = make("n", "A 107mm rocket found in Al-Fakir District near Route Copper.")
+    assert "mm" not in inc.persons
+    assert not any("District" in p for p in inc.persons)
+    assert not any("District" in g for g in inc.groups)
+
+
+def test_person_sanitizer_logic():
+    # Test the filter directly (deterministic, not dependent on the NER model).
+    v = FeatureExtractor._valid_person
+    assert v("Rashid Karim")          # real name kept
+    assert v("Kamal Dost")
+    assert not v("mm")                 # unit token rejected
+    assert not v("cm")
+    assert not v("Al-Fakir District")  # place phrase rejected
+    assert not v("IED")                # jargon rejected
+    assert not v("ab")                 # too short
+    g = FeatureExtractor._valid_group
+    assert g("the Northern Cell")
+    assert not g("Green Village")      # place rejected as a group

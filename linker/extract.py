@@ -69,6 +69,47 @@ class FeatureExtractor:
                 seen[(facet, canonical)] = Feature(facet, canonical, surface=m.group(0))
         return list(seen.values())
 
+    # -- entity sanitizers ---------------------------------------------------
+    # Tokens that NER sometimes tags as names but are units/jargon, not people.
+    _NAME_STOP = {
+        "mm", "cm", "km", "m", "kg", "g", "ied", "uxo", "hme", "vbied", "rcied",
+        "cw", "pp", "pir", "rc", "od", "photo", "img", "image", "grid",
+    }
+    # Suffixes that mark a phrase as a place, not a person or group.
+    _PLACE_SUFFIX = (
+        "district", "village", "road", "route", "junction", "sector", "gate",
+        "market", "town", "province", "valley", "bridge", "square", "spur",
+    )
+
+    @classmethod
+    def _is_place_like(cls, s: str) -> bool:
+        low = s.lower()
+        return any(low.endswith(suf) or f" {suf}" in low for suf in cls._PLACE_SUFFIX)
+
+    @classmethod
+    def _valid_person(cls, s: str) -> bool:
+        s = s.strip()
+        if len(s) < 3:
+            return False
+        if s.lower() in cls._NAME_STOP:
+            return False
+        if not any(c.isalpha() for c in s):
+            return False
+        if not any(c.isupper() for c in s):      # real names are capitalised -> kills "mm"
+            return False
+        if cls._is_place_like(s):                  # "Al-Fakir District" is a place, not a person
+            return False
+        return True
+
+    @classmethod
+    def _valid_group(cls, s: str) -> bool:
+        s = s.strip()
+        if len(s) < 3 or s.lower() in cls._NAME_STOP:
+            return False
+        if cls._is_place_like(s):                  # places aren't groups
+            return False
+        return True
+
     # -- entity extraction ---------------------------------------------------
     def _entities(self, text: str, inc: Incident) -> None:
         for m in _PHONE.finditer(text):
@@ -86,14 +127,20 @@ class FeatureExtractor:
             doc = self.nlp(text)
             for ent in doc.ents:
                 if ent.label_ == "PERSON":
-                    inc.persons.add(_norm_ws(ent.text))
+                    name = _norm_ws(ent.text)
+                    if self._valid_person(name):
+                        inc.persons.add(name)
                 elif ent.label_ in ("GPE", "LOC", "FAC"):
                     inc.places.add(_norm_ws(ent.text))
                 elif ent.label_ == "ORG":
-                    # keep multi-word orgs; drop short all-caps acronym noise
-                    t = ent.text.strip()
-                    if not (t.isupper() and len(t) <= 4):
-                        inc.groups.add(_norm_ws(t))
+                    t = _norm_ws(ent.text)
+                    # drop short all-caps acronyms and place-like / junk orgs
+                    if not (t.isupper() and len(t) <= 4) and self._valid_group(t):
+                        inc.groups.add(t)
+
+        # Final cross-check: anything also seen as a place is not a person/group.
+        inc.persons -= inc.places
+        inc.groups -= inc.places
 
     def extract(self, inc: Incident) -> Incident:
         text = inc.narrative or ""

@@ -1,0 +1,602 @@
+[
+  {
+    "id": "INC-080",
+    "date": "2026-03-17",
+    "location": "Blida",
+    "narrative": "On 17 an IED was located near a crowded market near Blida. Assessed as remote-controlled. Post-bla …"
+  },
+  {
+    "id": "INC-016",
+    "date": "2026-06-01",
+    "location": "Meiss ej-Jabal",
+    "narrative": "On 01 APR an IED struck a combined attack near Meiss ej-Jabal. Post-blast indicators: a pull switch and a yellow jug. Main charge UXO repurposed. A recovered item: a Grad-type rocket, sand-coloured, cylindrical, a mechanical time fuze. Source reporting references the Litani Group and an individual, Samir Aoun. A contact number 079-608-8474 was recovered."
+  },
+  {
+    "id": "INC-061",
+    "date": "2026-02-27",
+    "location": "Kfar Tibnit",
+    "narrative": "On 27 an IED was emplaced against near worshippers near Kfar Tibnit. Assessed as remote-controlled. Post-blast indicators: a hard wire and a pressure cooker. A recovered item: a 60mm mortar, large-calibre, khaki. Source reporting references the Litani Network and an individual, Rida Dagher."
+  },
+  {
+    "id": "INC-067",
+    "date": "2026-04-24",
+    "location": "Aïn Ebel",
+    "narrative": "On 24 MAR an IED was emplaced against a resupply patrol near Aïn Ebel. Assessed as time-delay. Post-blast indicators: a plank switch and a cooker device. Emplacement concealed in roadside debris. Main charge homemade explosive. Source reporting references the Litani Network and an individual, Nabil Khalil."
+  },
+  {
+    "id": "INC-009",
+    "date": "2026-02-09",
+    "location": "Blida",
+    "narrative": "On 09 APR an IED was emplaced against near worshippers near Blida. Assessed as radio-controlled. Post-blast indicators: a CW and a pressure cooker. Main charge homemade explosive. A contact number 076-528-2144 was recovered."
+  },
+  {
+    "id": "INC-030",
+    "date": "2026-03-14",
+    "location": "Kfar Tibnit",
+    "narrative": "On 14 an IED was located near a patrol near Kfar Tibnit. Assessed as radio-controlled. Post-blast indicators: a hard wire and a cooker device. Emplacement left in place. A recovered item: a mortar round, approximately 1 m long, khaki, weathered. Source reporting references the Litani Network."
+  },
+  {
+    "id": "INC-017",
+    "date": "2026-01-20",
+    "location": "Blida",
+    "narrative": "On 20 APR an IED was emplaced against near worshippers near Blida. Assessed as remote-controlled. A recovered item: a 82mm mortar bomb, approximately 1 m long, sand-coloured, with a pointed nose. Photo: img_017.jpg. Source reporting references the Litani Network."
+  },
+  {
+    "id": "INC-059",
+    "date": "2026-04-16",
+    "location": "Kfar Tibnit",
+    "narrative": "On 16 APR an IED was located near a crowded market near Kfar Tibnit. Assessed as RCIED. Post-blast indicators: a command wire. Emplacement left in place. Main charge homemade explosive. A recovered item: a 60mm mortar, about 60cm, khaki, with a bulbous warhead."
+  },
+  {
+    "id": "INC-027",
+    "date": "2026-05-05",
+    "location": "Meiss ej-Jabal",
+    "narrative": "On 05 an IED was located near a patrol near Meiss ej-Jabal. Assessed as VOIED. Post-blast indicators: a trip-wir …"
+  },
+  {
+    "id": "INC-004",
+    "date": "2026-01-26",
+    "location": "Houla",
+    "narrative": "On 26 an IED was located near a logistics route near Houla. Assessed as time-delay. Post-blast indicators: a pressure plate. Emplacement disgui …"
+  },
+  {
+    "id": "INC-053",
+    "date": "2026-02-08",
+    "location": "Kfar Tibnit",
+    "narrative": "On 08 an IED targeted civilians nearby near Kfar Tibnit. Assessed as r …"
+  },
+  {
+    "id": "INC-008",
+    "date": "2026-06-04",
+    "location": "Aïn Ebel",
+    "narrative": "On 04 MAR an IED was located near a convoy near Aïn Ebel. Assessed as timer-initiated. Post-blast indicators: a plank switch. A recovered item: a UXO, approximately 1 m long, heavily rusted, ball-shaped, a point-detonating fuze. Photo: img_008.jpg. Source reporting references the Litani Network and an individual, Nabil Khalil."
+  },
+  {
+    "id": "INC-041",
+    "date": "2026-06-09",
+    "location": "Aïn Ebel",
+    "narrative": "On 09 APR an IED targeted a convoy near Aïn Ebel. Post-blast indicators: a PP switch and a cooker device. Emplacement disguised as rubbish. Main charge homemade explosive. Source reporting references the Litani Network and an individual, Nabil Khalil. A contact number 072-653-2929 was recovered."
+  },
+  {
+    "id": "INC-036",
+    "date": "2026-06-26",
+    "location": "Aïn Ebel",
+    "narrative": "On 26 MAR an IED was emplaced against a logistics route near Aïn Ebel. Assessed as time-delay. Post-blast indicators: a pressure plate. Emplacement hidden in a wall …"
+  },
+  {
+    "id": "INC-076",
+    "date": "2026-05-05",
+    "location": "Kfar Tibnit",
+    "narrative": "On 05 an IED was located near civilians nearby near Kfar Tibnit. Assessed as remote-controlled. Emplacement left in place. Source reporting references the Litani Network. A contact number 076-528-2144 was recovered."
+  },
+  {
+    "id": "INC-021",
+    "date": "2026-03-13",
+    "location": "Srifa",
+    "narrative": "On 13 an IED was emplaced against small-arms and IED near Srifa. Post-blast indicators: a tripwire. Emplacem …"
+  },
+  {
+    "id": "INC-023",
+    "date": "2026-06-25",
+    "location": "Yaroun",
+    "narrative": "On 25 an IED was located near a resupply patrol near Yaroun. Post-blast indicators: a plank switch and a pressure cooker. Emplacement concealed in roadside debris. A recovered item: a aband …"
+  },
+  {
+    "id": "INC-090",
+    "date": "2026-04-02",
+    "location": "Ghandouriyeh",
+    "narrative": "On 02 MAR an IED targeted multiple linked charges near Ghandouriyeh. Assessed as remote-controlled. Main charge repurposed artillery shell. A recovered item: a 155mm projectile, about 60cm, with a yellow band, a mechanical time fuze. Photo: img_090.jpg. Source reporting references the Wadi Group."
+  },
+  {
+    "id": "INC-060",
+    "date": "2026-03-26",
+    "location": "Kfar Tibnit",
+    "narrative": "On 26 an IED was emplaced against a patrol near Kfar Tibnit. Assessed as remote-controlled. Post-blast indicators: a command wire and a cooker device. Main charge improvised mixture. Source reporting references the Litani Network and an individual, Rida Dagher."
+  },
+  {
+    "id": "INC-028",
+    "date": "2026-04-12",
+    "location": "Blida",
+    "narrative": "On 12 an IED targeted civilians nearby near Blida. Post-blast indicators: a trigger wire and a cooker device. A recovered item: a …"
+  },
+  {
+    "id": "INC-081",
+    "date": "2026-05-08",
+    "location": "Kfar Kila",
+    "narrative": "On 08 an IED was located near a patrol near Kfar Kila. Assessed as command …"
+  },
+  {
+    "id": "INC-037",
+    "date": "2026-06-27",
+    "location": "Kfar Tibnit",
+    "narrative": "On 27 an IED targeted a patrol near Kfar Tibnit. Assessed as delayed initiation. Post-blas …"
+  },
+  {
+    "id": "INC-047",
+    "date": "2026-03-20",
+    "location": "Aïn Ebel",
+    "narrative": "On 20 an IED was emplaced against small-arms and IED near Aïn Ebel. Assessed as victim-operated. Post-blast indicators: a trip-wire and a plastic jug. Emplacement left in place. Main charge a mortar round used as the charge. A recovered item: a 122mm rocket, roughly 80 cm, khaki, cylindrical."
+  },
+  {
+    "id": "INC-098",
+    "date": "2026-03-03",
+    "location": "Blida",
+    "narrative": "On 03 MAR an IED was located near a patrol near Blida. Assessed as time-delay. Post-blast indicators: a pressure plate …"
+  },
+  {
+    "id": "INC-007",
+    "date": "2026-06-09",
+    "location": "Blida",
+    "narrative": "On 09 MAR an IED was located near civilians nearby near Blida. Assessed as RCIED. Post-blast indicators: a hard wire and a pressure cooker. Emplacement left in place. Main charge homemade explosive. A recovered item: a 60mm …"
+  },
+  {
+    "id": "INC-056",
+    "date": "2026-02-23",
+    "location": "Blida",
+    "narrative": "On 23 an IED was emplaced against a crowded market near Blida. Assessed as radio-controlled. Post-blast indicators: a command wire and a cooker device. Emplacement left in place. Main charge HME. Source reporting references the Litani Network. A contact number 076-528-2144 was recovered."
+  },
+  {
+    "id": "INC-097",
+    "date": "2026-01-19",
+    "location": "Ghandouriyeh",
+    "narrative": "On 19 an IED was located near a come-on lure near Ghandouriyeh. Assessed as command wire initiated. Main charge repurposed artillery shell."
+  },
+  {
+    "id": "INC-065",
+    "date": "2026-04-25",
+    "location": "Marjayoun",
+    "narrative": "On 25 an IED functioned against small-arms and IED near Marjayoun. Assessed as command-initiated. Post-blast indicators: a PP switch and a cardboard box. Emplacement hidden in a wall cavity. A recovered item: a hand grenade, approximately 1 m long, with a yellow band, fin-stabilised, with a cracked casing. Photo: img_065.jpg. Source reporting references the Litani Cell and an individual, Ziad Haidar."
+  },
+  {
+    "id": "INC-073",
+    "date": "2026-03-27",
+    "location": "Aïn Ebel",
+    "narrative": "On 27 an IED functioned against a convoy near Aïn Ebel. Emplacement disguised as rubbish. Main charge homemade explosive. A recovered item: a abandone …"
+  },
+  {
+    "id": "INC-043",
+    "date": "2026-05-12",
+    "location": "Zawtar",
+    "narrative": "On 12 APR an IED struck a patrol near Zawtar. Assessed as time-delay. Post-blast ind …"
+  },
+  {
+    "id": "INC-054",
+    "date": "2026-04-02",
+    "location": "Kfar Tibnit",
+    "narrative": "On 02 MAR an IED functioned against civilians nearby near Kfar Tibnit. Assessed as radio-controlled. Post-blast indicators: a command wire. Emplacement left in place. Source reporting references the Litani Network and an individual, Rida Dagher."
+  },
+  {
+    "id": "INC-014",
+    "date": "2026-05-21",
+    "location": "Houla",
+    "narrative": "On 21 an IED was emplaced against a patrol near Houla. Post-blast indicators: a pressure-plate."
+  },
+  {
+    "id": "INC-055",
+    "date": "2026-06-24",
+    "location": "Blida",
+    "narrative": "On 24 MAR an IED struck near worshippers near Blida. Assessed as RCIED. Post-blast indicators: a trigger wire and a pressure cooker. Emplacement hand-emplaced. Main charge improvised mixture. A recovered item: a mortar round, desert tan, ball-shaped, fuze absent. Source reporting references the Litani Network and an individual, Rida Dagher."
+  },
+  {
+    "id": "INC-069",
+    "date": "2026-02-20",
+    "location": "Kfar Tibnit",
+    "narrative": "On 20 an IED targeted a convoy near Kfar Tibnit. Assessed as timer-initiated. Post-blast indicators: a pressure-plate and a cooker device. Emplacement hidden in a wall cavity. Source reporting references the Litani Network and an individual, Nabil Khalil. A contact number 072-653-2929 was recovered."
+  },
+  {
+    "id": "INC-100",
+    "date": "2026-02-12",
+    "location": "Naqoura",
+    "narrative": "On 12 MAR an IED struck a patrol near Naqoura. Emplacement buried at the road verge. Main charge homemade explosive. A recovered item: a unexploded ordnance, blue, cylindrical, leaking. Source reporting references the Southern Cell and an individual, Fadi Khalil. A contact number 078-275-4139 was recovered."
+  },
+  {
+    "id": "INC-070",
+    "date": "2026-05-05",
+    "location": "Blida",
+    "narrative": "On 05 an IED targeted near worshippers near Blida. Assessed as remote-controlled. Post-blast indicators: a CW and a pressure cooker. Emplacement placed device. Main charge homemade explosive."
+  },
+  {
+    "id": "INC-072",
+    "date": "2026-03-12",
+    "location": "Srifa",
+    "narrative": "On 12 MAR an IED struck a combined attack near Srifa. Assessed as VOIED. Post-blast indicators: a tripwire. Emplacement hand-emplaced. A recovered item: a Grad-type rocket, about 60cm, desert tan, fin-stabilised, a mechanical time fuze. Photo: img_072.jpg."
+  },
+  {
+    "id": "INC-062",
+    "date": "2026-01-17",
+    "location": "Houla",
+    "narrative": "On 17 an IED was located near a convoy near Houla. Assessed as timer-initiated. Post-blast indicators: a PP switch. Emplacement hidden in a wall cavity. Main charge improvised mixture. A recovered item: a UXO, about 60cm, heavily rusted, a point-detonating fuze. Photo: img_062.jpg."
+  },
+  {
+    "id": "INC-079",
+    "date": "2026-06-21",
+    "location": "Srifa",
+    "narrative": "On 21 an IED was emplaced against a complex ambush with small-arms fire near Srifa. Post-blast indicators: a trip-wire and a plastic jug. Emplacement left in place. A recovered item: a Grad-type rocket, roughly 80 cm, sand-coloured, damaged, a point-detonating fuze. Source reporting references the Litani Group. A contact number 079-608-8474 was recovered."
+  },
+  {
+    "id": "INC-011",
+    "date": "2026-03-26",
+    "location": "Kfar Tibnit",
+    "narrative": "On 26 an IED functioned against a crowded market near Kfar Tibnit. Post-blast indicators: a hard wire and a pressure cooker. Emplacement hand-emplaced. Main charge improvised mixture. Source reporting references the Litani Network and an individual, Rida Dagher."
+  },
+  {
+    "id": "INC-051",
+    "date": "2026-06-11",
+    "location": "Blida",
+    "narrative": "On 11 an IED targeted a patrol near Blida. Assessed as radio-controlled. Emplacement hand-emplaced."
+  },
+  {
+    "id": "INC-026",
+    "date": "2026-06-11",
+    "location": "Meiss ej-Jabal",
+    "narrative": "On 11 MAR an IED was located near a combined attack near Meiss ej-Jabal. Post-blast indicators: a pull switch. Empl …"
+  },
+  {
+    "id": "INC-039",
+    "date": "2026-05-03",
+    "location": "Srifa",
+    "narrative": "On 03 MAR an IED functioned against a combined attack near Srifa. Emplacement placed device. Main charge repurposed artillery shell. Source reporting references the Litani Group. A contact number 079-608-8474 was recovered."
+  },
+  {
+    "id": "INC-044",
+    "date": "2026-03-01",
+    "location": "Kfar Tibnit",
+    "narrative": "On 01 APR an IED functioned against near worshippers near Kfar Tibn …"
+  },
+  {
+    "id": "INC-087",
+    "date": "2026-06-10",
+    "location": "Aitaroun",
+    "narrative": "On 10 an IED targeted near worshippers near Aitaroun. Assessed as command wire initiated. Post-blast indicators: a RC trigger. Emplacement left in place. A recov …"
+  },
+  {
+    "id": "INC-040",
+    "date": "2026-01-27",
+    "location": "Zawtar",
+    "narrative": "On 27 MAR an IED targeted a combined attack near Zawtar. Assessed as delayed initiation. Post-blast indicators: a trip-wire. Emplacement left in place. Source reporting references the Litani Group."
+  },
+  {
+    "id": "INC-012",
+    "date": "2026-02-08",
+    "location": "Srifa",
+    "narrative": "On 08 MAR an IED targeted a patrol near Srifa. Assessed as pressure-initiated. Post-blast indicators: a tripwire. Emplacement left in place. Main charge repurposed artillery shell. Source reporting references the Litani Group and an individual, Samir Aoun."
+  },
+  {
+    "id": "INC-084",
+    "date": "2026-04-09",
+    "location": "Naqoura",
+    "narrative": "On 09 APR an IED targeted daisy-chained charges near Naqoura. Emplacement car bomb. Main charge HME. A recovered item: a 82mm mortar bomb, about 60cm, with a yellow band, with a conical nose, weathered."
+  },
+  {
+    "id": "INC-050",
+    "date": "2026-02-14",
+    "location": "Houla",
+    "narrative": "On 14 an IED functioned against a resupply patrol near Houla. Post-blast indicators: a plank switch and a pressure cooker. Emplacement disguised as rubbish. A recovered item: a unexploded ordnance, approximately 1 m long, rust-coloured, a mechanical time fuze. Photo: img_050.jpg. Source reporting references the Litani Network. A contact number 072-653-2929 was recovered."
+  },
+  {
+    "id": "INC-074",
+    "date": "2026-02-02",
+    "location": "Aïn Ebel",
+    "narrative": "On 02 an IED targeted a convoy near Aïn Ebel. Assessed as time-delay. Post-blast indicators: a plank switch. Main charge homemade explosive. A recovered i …"
+  },
+  {
+    "id": "INC-031",
+    "date": "2026-03-20",
+    "location": "Blida",
+    "narrative": "On 20 an IED functioned against a patrol near Blida. Assessed as radio-controlled. Post-blast indicators: a hard wire. Emplacement placed device. Main charge homemade explosive. A recovered item: a 82mm mortar bomb, about 60cm, sand-coloured, with a pointed nose. Photo: img_031.jpg."
+  },
+  {
+    "id": "INC-064",
+    "date": "2026-01-02",
+    "location": "Meiss ej-Jabal",
+    "narrative": "On 02 an IED was emplaced against a combined attack near Meiss ej-Jabal. Assessed as VOIED. Post-blast indicators: a pull switch and a yellow jug. Emplacement placed device. Source reporting references the Litani Group and an individual, Samir Aoun."
+  },
+  {
+    "id": "INC-083",
+    "date": "2026-01-10",
+    "location": "Srifa",
+    "narrative": "On 10 MAR an IED functioned against near worshippers near Srifa. Post-blast indicators: a PP switch. Emplacement buried at the road verge. Main charge commercial explosive. A recovered item: a 107 mm rocket, roughly 80 cm, with a red band, half-buried, fuze absent. A contact number 074-224-9524 was recovered."
+  },
+  {
+    "id": "INC-088",
+    "date": "2026-01-04",
+    "location": "Ghandouriyeh",
+    "narrative": "On 04 an IED functioned against a patrol near Ghandouriyeh. Assessed as VOIED. Post-blast indicators: a command wire and a boot of the car. Emplacement under the road drainage."
+  },
+  {
+    "id": "INC-022",
+    "date": "2026-06-28",
+    "location": "Meiss ej-Jabal",
+    "narrative": "On 28 MAR an IED was located near small-arms and IED near Meiss ej-Jabal. Assessed as pressure-initiated. Post-blast indicators: a …"
+  },
+  {
+    "id": "INC-002",
+    "date": "2026-02-27",
+    "location": "Meiss ej-Jabal",
+    "narrative": "On 27 MAR an IED was located near a complex ambush with small-arms fire near Meiss ej-Jabal. Assessed as pressure-initiated. Post-blast indicators: a tripwire and a jerry can. Main charge a mortar round used as the charge. Source reporting references the Litani Group and an individual, Samir Aoun. A contact number 079-608-8474 was recovered."
+  },
+  {
+    "id": "INC-001",
+    "date": "2026-02-17",
+    "location": "Zawtar",
+    "narrative": "On 17 an IED targeted a patrol near Zawtar. Assessed as timer-initiated. Post-blast indicators: a tripwire and a oil barrel. Emplacement hand-emplaced. Source reporting references the Litani Group and an individual, Marwan Saad."
+  },
+  {
+    "id": "INC-029",
+    "date": "2026-03-20",
+    "location": "Kfar Tibnit",
+    "narrative": "On 20 APR an IED functioned against a patrol near Kfar Tibnit. Assessed as RCIED. Emplacement pl …"
+  },
+  {
+    "id": "INC-018",
+    "date": "2026-04-03",
+    "location": "Houla",
+    "narrative": "On 03 APR an IED struck a resupply patrol near Houla. Assessed as time-delay. Main charge HME. A recovered item: a UXO, approximately 1 m long, heavily rusted, with a bulbous warhead, a mechanical time fuze. Source reporting references the Litani Network and an individual, Nabil Khalil."
+  },
+  {
+    "id": "INC-052",
+    "date": "2026-02-15",
+    "location": "Zawtar",
+    "narrative": "On 15 an IED was emplaced against small-arms and IED near Zawtar. Assessed as command detonated. Post-blast indicators: a plank switch and a flour sack. Main charge mining explosive. A recovered item: a hand grenade, about 60cm, with a yellow band, …"
+  },
+  {
+    "id": "INC-099",
+    "date": "2026-02-08",
+    "location": "Srifa",
+    "narrative": "On 08 APR an IED was located near a secondary device near Srifa. Assessed as command detonated. Post-blast indicators: a radio control and a rice bag. A recovered item: a artillery shell, roughly 80 cm, with a yellow band, intact, a point-detonating fuze."
+  },
+  {
+    "id": "INC-045",
+    "date": "2026-05-22",
+    "location": "Srifa",
+    "narrative": "On 22 MAR an IED was emplaced against a patrol near Srifa. Assessed as VOIED. Post-blast indicators: a tripwire and a plastic jug. A recovered item: a Grad-type rocket, roughly 80 cm, khaki, ball-shaped, damaged, a mechanical time fuze. Photo: img_045.jpg."
+  },
+  {
+    "id": "INC-035",
+    "date": "2026-02-01",
+    "location": "Blida",
+    "narrative": "On 01 an IED functioned against near worshippers near Blida. Post-blast indicators: a trigger wire and a pressure cooker. A recovered item: a mortar round, approximately 1 m long, sand-coloured, weathered. Photo: img_035.jpg. Source reporting references the Litani Network. A contact number 076-528-2144 was recovered."
+  },
+  {
+    "id": "INC-082",
+    "date": "2026-05-02",
+    "location": "Aïn Ebel",
+    "narrative": "On 02 MAR an IED targeted a baited approach near Aïn Ebel. Assessed as delayed initiation. Post-blast indicators: a long-range cordless. Source reporting references the Wadi Cell."
+  },
+  {
+    "id": "INC-019",
+    "date": "2026-03-13",
+    "location": "Chaqra",
+    "narrative": "On 13 APR an IED targeted a patrol near Chaqra. Post-blast indicators: a plank switch. Emplacement disguised as rubbish. A recovered item: a rifle grenade, small, with a yellow band, fuze visible. Photo: img_019.jpg. Source reporting references the Litani Cell."
+  },
+  {
+    "id": "INC-049",
+    "date": "2026-01-05",
+    "location": "Yaroun",
+    "narrative": "On 05 MAR an IED functioned against a logistics route near Yaroun. Assessed as timer-initiated. Post-blast indicators: a pressure plate. Emplacement concealed in roadside debris. Main charge HME. A recovered item: a abandoned ordnance, small, heavily rusted, box-shaped, undamaged, fuze visible. Photo: img_049.jpg. Source reporting references the Litani Network. A contact number 072-653-2929 was recovered."
+  },
+  {
+    "id": "INC-038",
+    "date": "2026-05-25",
+    "location": "Chaqra",
+    "narrative": "On 25 an IED was located near a combined attack near Chaqra. Emplacement concealed in roadside debris. Main charge commercial explosive. A contact number 077-796-9711 was recovered."
+  },
+  {
+    "id": "INC-020",
+    "date": "2026-02-08",
+    "location": "Srifa",
+    "narrative": "On 08 MAR an IED targeted a combined attack near Srifa. Assessed as VOIED. Post-blast indicators: a pull switch and a yellow jug. Emplacement placed device. A recovered item: a Grad-type rocket, small, desert tan, tubular, no visible fuze."
+  },
+  {
+    "id": "INC-024",
+    "date": "2026-06-25",
+    "location": "Yaroun",
+    "narrative": "On 25 APR an IED functioned against a patrol near Yaroun. Assessed as d …"
+  },
+  {
+    "id": "INC-034",
+    "date": "2026-06-18",
+    "location": "Aïn Ebel",
+    "narrative": "On 18 APR an IED functioned against a resupply patrol near Aïn Ebel. Assessed as timer-initiated. Post-blast indicators: a plank switch and a cooker device. Emplacement hidden in a wall cavity. Main charge homemade explosive. A recovered item: a unexploded ordnance, small, rust-coloured, a mechanical time fuze."
+  },
+  {
+    "id": "INC-010",
+    "date": "2026-01-20",
+    "location": "Kfar Tibnit",
+    "narrative": "On 20 an IED was emplaced against a patrol near Kfar Tibnit. Assessed as RCIED. Post-blast indicators: a CW and a cooker device. Emplacement hand-emplaced. Main charge homemade explosive. A recovered item: a mortar round, about 60cm, desert tan."
+  },
+  {
+    "id": "INC-077",
+    "date": "2026-06-26",
+    "location": "Kfar Tibnit",
+    "narrative": "On 26 an IED was emplaced against a resupply patrol near Kfar Tibnit. Assessed as time-delay. Post-blast i …"
+  },
+  {
+    "id": "INC-094",
+    "date": "2026-01-06",
+    "location": "Tayr Harfa",
+    "narrative": "On 06 MAR an IED targeted a convoy near Tayr Harfa. Assessed as time-delay. Emplacement buried on the shoulder. Main charge UXO repurposed. Source reporting references the Southern Group. A contact number 072-899-4866 was recovered."
+  },
+  {
+    "id": "INC-086",
+    "date": "2026-05-27",
+    "location": "Meiss ej-Jabal",
+    "narrative": "On 27 an IED struck multiple linked charges near Meiss ej-Jabal. Assessed as time-delay. Post-blast indicators: a trip-wire and a pressure cooker. Emplacement under the bridge. Source reporting references the Litani Cell and an individual, Rida Fares. A contact number 079-609-5912 was recovered."
+  },
+  {
+    "id": "INC-085",
+    "date": "2026-04-23",
+    "location": "Chaqra",
+    "narrative": "On 23 APR an IED was located near a patrol near Chaqra. Assessed as VOIED. Post-bla …"
+  },
+  {
+    "id": "INC-057",
+    "date": "2026-06-02",
+    "location": "Houla",
+    "narrative": "On 02 an IED targeted a patrol near Houla. Emplacement disguised as rubbish. Main charge HME. A recovered item: a UX …"
+  },
+  {
+    "id": "INC-075",
+    "date": "2026-04-23",
+    "location": "Blida",
+    "narrative": "On 23 MAR an IED was emplaced against a crowded market near Blida. Post-blast indicators: a trigger wire and a pressure cooker. Emplacement hand-emplaced. Main charge HME. A recovered item: a 82mm mortar bomb, large-calibre, sand-coloured, a mechanical time fuze. A contact number 076-528-2144 was recovered."
+  },
+  {
+    "id": "INC-003",
+    "date": "2026-01-08",
+    "location": "Meiss ej-Jabal",
+    "narrative": "On 08 MAR an IED was located near a patrol near Meiss ej-Jabal. Assessed as victim-operated. Post-blast indicators: a pull switch. Emplacement placed device. Source reporting references the Litani Group. A contact number 079-608-8474 was recovered."
+  },
+  {
+    "id": "INC-058",
+    "date": "2026-06-18",
+    "location": "Kfar Tibnit",
+    "narrative": "On 18 APR an IED was emplaced against a crowded market near Kfar Tibnit. Assessed as RCIED. Post-blast indicators: a trigger wire and a pressure cooker. Emplacement left in place. A recovered item: a 60mm mortar, roughly 80 cm, khaki. Source reporting references the Litani Network and an individual, Rida Dagher."
+  },
+  {
+    "id": "INC-025",
+    "date": "2026-04-17",
+    "location": "Aïn Ebel",
+    "narrative": "On 17 an IED was emplaced against a convoy near Aïn Ebe …"
+  },
+  {
+    "id": "INC-089",
+    "date": "2026-05-28",
+    "location": "Aïn Ebel",
+    "narrative": "On 28 APR an IED was emplaced against a baited approach near Aïn Ebel. Assessed as pressure-initiated. Post-blast indicators: a PI …"
+  },
+  {
+    "id": "INC-033",
+    "date": "2026-01-04",
+    "location": "Zawtar",
+    "narrative": "On 04 MAR an IED struck a combined attack near Zawtar. Post-blast indicators: a pressure plate. Main charge commercial explosive. A recovered item: a rifle grenade, small, with a yellow band, tubular."
+  },
+  {
+    "id": "INC-032",
+    "date": "2026-03-19",
+    "location": "Aïn Ebel",
+    "narrative": "On 19 APR an IED was emplaced against a resupply patrol near Aïn Ebel. Assessed as delayed initiation. Post-blast indicators: a pressure plate and a pressure cooker. Main charge homemade explosive. A recovered item: a unexploded ordnance, about 60cm, rust-coloured, cylindrical, no visible fuze."
+  },
+  {
+    "id": "INC-005",
+    "date": "2026-02-10",
+    "location": "Houla",
+    "narrative": "On 10 APR an IED struck a patrol near Houla. Assessed as timer-initiated. Post-blast indicators: a pressure plate and a cooker device. Emplacement disguised as rubbish. Main charge improvised mixture. Source reporting references the Litani Network and an individual, Nabil Khalil."
+  },
+  {
+    "id": "INC-015",
+    "date": "2026-06-23",
+    "location": "Aïn Ebel",
+    "narrative": "On 23 an IED struck a resupply patrol near Aïn Ebel. Post-blast indicators: a pressure-plate. Emplacement disguised as rubbish. Main charge improvised mixture. A recovered item: a abandoned ordnance, approximately 1 m long, rust-coloured, box-shaped, protruding from the ground, no visible fuze. Source reporting references the Litani Network and an individual, Nabil Khalil."
+  },
+  {
+    "id": "INC-092",
+    "date": "2026-03-20",
+    "location": "Zawtar",
+    "narrative": "On 20 an IED was emplaced against a convoy near Zawtar."
+  },
+  {
+    "id": "INC-042",
+    "date": "2026-03-19",
+    "location": "Chaqra",
+    "narrative": "On 19 an IED was emplaced against a complex ambush with small-arms fire near Chaqra. Assessed as command wire initiated. Post-blast indicators: a pressure plate. Emplacement hidden in a wall cavity. Main charge mining explosive. A recovered item: a hand grenade, small, with a yellow band, with a cracked casing, a nose fuze fitted. Source reporting references the Litani Cell."
+  },
+  {
+    "id": "INC-071",
+    "date": "2026-05-25",
+    "location": "Aïn Ebel",
+    "narrative": "On 25 an IED functioned against a combined attack near Aïn Ebel. Assessed as pressure-initiated. Post-blast indicators: a tripwire. Emplacement left in place. Main charge UXO repurposed. Source reporting references the Litani Group."
+  },
+  {
+    "id": "INC-091",
+    "date": "2026-01-22",
+    "location": "Deir Mimas",
+    "narrative": "On 22 an IED struck a patrol near Deir Mimas. Assessed as remote-controlled. Post-blast indicators: a tripwire. Emplacement hand-emplaced. …"
+  },
+  {
+    "id": "INC-013",
+    "date": "2026-06-10",
+    "location": "Blida",
+    "narrative": "On 10 APR an IED functioned against a crowded market near Blida. Assessed as RCIED. Post-blast indicators: a trigger wire and a cooker device. Main charge HME."
+  },
+  {
+    "id": "INC-096",
+    "date": "2026-01-21",
+    "location": "Kfar Tibnit",
+    "narrative": "On 21 APR an IED targeted a logistics route near Kfar Tibnit. Assessed as victim-ope …"
+  },
+  {
+    "id": "INC-078",
+    "date": "2026-04-26",
+    "location": "Kfar Tibnit",
+    "narrative": "On 26 an IED struck a convoy near Kfar Tibnit. Post-blast indicators: a PP switch. Emplacement hidden in a wall cavity. A recovered item: a UXO, approximately 1 m long, rust-coloured, cylindrical. Photo: img_078.jpg. Source reporting references the Litani Network and an individual, Nabil Khalil."
+  },
+  {
+    "id": "INC-006",
+    "date": "2026-04-25",
+    "location": "Zawtar",
+    "narrative": "On 25 MAR an IED was emplaced against a complex ambush with small-arms fire near Zawtar. Post-blast indicators: a tripwire and a oil barrel. Emplacement placed device. Main charge repurposed artillery shell. A recovered item: a artillery shell, small, sand-coloured. Source reporting references the Litani Group and an individual, Marwan Saad."
+  },
+  {
+    "id": "INC-063",
+    "date": "2026-02-21",
+    "location": "Kfar Tibnit",
+    "narrative": "On 21 MAR an IED was located near civilians nearby near Kfar Tibnit. Assessed as RCIED. Emplacement hand-emplaced. Main charge homemade explosive. Source reporting references the Litani Network."
+  },
+  {
+    "id": "INC-093",
+    "date": "2026-03-07",
+    "location": "Kfar Kila",
+    "narrative": "On 07 an IED targeted a convoy near Kfar Kila. Assessed as command detonated. Post-blast indicators: a pull switch and a rice bag. Emplacement under the road drainage. Main charge a mortar round used as the charge."
+  },
+  {
+    "id": "INC-046",
+    "date": "2026-06-28",
+    "location": "Srifa",
+    "narrative": "On 28 an IED targeted a combined attack near Srifa. Assessed as pressure-initiated. Post-blast indicators: a tripwire. Emplacement hand-emplaced. Source reporting references the Litani Group and an individual, Samir Aoun. A contact number 079-608-8474 was recovered."
+  },
+  {
+    "id": "INC-068",
+    "date": "2026-06-20",
+    "location": "Houla",
+    "narrative": "On 20 an IED was emplaced against a resupply patrol near Houla. Assessed as delayed initiation. Post-blast indicators: a plank switch and a pressure cooker. Emplacement concealed in roadside debris. A recovered item: a abandoned ordnance, about 60cm, heavily rusted, with a cracked casing, a point-detonating fuze. Source reporting references the Litani Network and an individual, Nabil Khalil. A contact number 072-653-2929 was recovered."
+  },
+  {
+    "id": "INC-095",
+    "date": "2026-03-01",
+    "location": "Chaqra",
+    "narrative": "On 01 an IED targeted a complex ambush with small-arms fire near Chaqra. Assessed as RCIED. Emplacement under the road drainage. Main charge commercial explosive. Source reporting references the Wadi Network."
+  },
+  {
+    "id": "INC-066",
+    "date": "2026-05-04",
+    "location": "Kfar Tibnit",
+    "narrative": "On 04 MAR an IED functioned against a crowded market near Kfar Tibnit. Assessed as RCIED. Emplacement hand-emplaced. Main charge homemade explosive."
+  },
+  {
+    "id": "INC-048",
+    "date": "2026-06-21",
+    "location": "Srifa",
+    "narrative": "On 21 an IED functioned against small-arms and IED near Srifa. Post-blast indicators: a trip-wire. Emplacement placed device. Main charge repurposed artillery shell. A recovered item: a Grad-type rocket, sand-coloured. Photo: img_048.jpg. Source reporting references the Litani Group. A contact number 079-608-8474 was recovered."
+  }
+]

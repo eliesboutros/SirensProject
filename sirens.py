@@ -35,6 +35,8 @@ def menu():
         print("  3)  Pre-arrival brief for an area (ask me questions)")
         print("  4)  Run the tests (check everything works)")
         print("  5)  Analyse MY folder of reports (you give the path)")
+        print("  6)  Generate a big synthetic dataset (100 reports + answer key)")
+        print("  7)  Evaluate accuracy against the answer key (precision/recall)")
         print("  0)  Quit")
         choice = input("\n  Choose a number: ").strip()
 
@@ -71,6 +73,18 @@ def menu():
             path = input("  Path to your folder of .json/.txt reports: ").strip()
             if path:
                 run(["analyze", path])
+            pause()
+        elif choice == "6":
+            print()
+            subprocess.run([PY, str(ROOT / "generate_dataset.py"),
+                            "--n", "100", "--out", str(ROOT / "data" / "generated")])
+            print("\nGenerated into data/generated/. Analyse it with option 5 (path: data/generated)")
+            pause()
+        elif choice == "7":
+            print()
+            subprocess.run([PY, str(ROOT / "evaluate.py"),
+                            "--data", str(ROOT / "data" / "generated")])
+            print("\n(If this says 'no incidents', run option 6 first to generate the data.)")
             pause()
         elif choice == "0":
             print("  Bye.")

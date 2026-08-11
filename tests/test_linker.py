@@ -142,3 +142,21 @@ def test_person_sanitizer_logic():
     g = FeatureExtractor._valid_group
     assert g("the Northern Cell")
     assert not g("Green Village")      # place rejected as a group
+
+
+
+def test_community_detection_separates_two_networks():
+    # Two dense signatures + a bridge incident must not collapse into one.
+    from linker.match import Matcher
+    from linker.cluster import Clusterer
+    incs = []
+    for i in range(4):
+        incs.append(make(f"A{i}", "victim-operated pressure plate pressure cooker HME convoy, the Alpha Cell"))
+    for i in range(4):
+        incs.append(make(f"B{i}", "command wire complex ambush secondary device repurposed ordnance, the Bravo Cell"))
+    m = Matcher().fit(incs)
+    links = m.all_pairs(incs, threshold=0.3)
+    clusters = Clusterer(incs, links).clusters(method="louvain")
+    # both true groups recovered as separate clusters of 4
+    sizes = sorted(c.size for c in clusters)
+    assert sizes == [4, 4]

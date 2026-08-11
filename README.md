@@ -122,6 +122,53 @@ The object is just another linked entity: `object_type`, `colour`, `shape`,
 `condition`, `fuze` and `size` are extracted like any other feature, so the same
 matching engine powers both `analyze` and `brief`.
 
+## Generate data & measure accuracy
+
+The project ships a synthetic dataset generator and an evaluation harness so the
+tool's quality is a *number*, not a vibe.
+
+```bash
+python generate_dataset.py --n 100 --out data/generated   # 100 reports + answer key
+python evaluate.py --data data/generated                  # precision / recall / F1
+```
+
+`generate_dataset.py` produces `incidents.json` plus a `ground_truth.json` key of
+the true networks (fabricated signatures set in real South Lebanon localities,
+with wording variants, partial reports and unrelated noise). `evaluate.py` runs
+the full pipeline and scores the clustering with pair-level precision/recall/F1
+against that key. Both are options 6 and 7 in `python sirens.py`.
+
+Clustering uses **community detection** (Louvain, weight-aware) by default, which
+is what makes this work at scale — connected-components clustering fuses two real
+networks the moment a single bridge link appears. Pass `method="components"` for
+the simple behaviour on tiny sets.
+
+## Generating data and measuring accuracy
+
+Two scripts turn "it looks like it works" into a number.
+
+**Generate a synthetic dataset with a ground-truth key:**
+```bash
+python generate_incidents.py --n 100 --networks 5 --out data/generated --seed 7
+```
+Writes `incidents.json` (fabricated, deliberately messy reports set in real
+South Lebanon place names, with variant wording, partial reports and dropped
+fields) and `ground_truth.json` (which network each incident really belongs to,
+or NOISE). All data is fabricated and descriptive.
+
+**Measure the linker against the key (pairwise precision/recall/F1):**
+```bash
+python evaluate.py --data data/generated --sweep
+```
+
+On the messy 100-incident set the current linker scores about precision 0.5–0.6
+with high recall (best F1 ~ 0.67) — below the 0.90/0.80 target, because
+connected-component clustering over-merges networks through single weak edges
+(single-linkage). This is the headline Week-2 task: switch to community
+detection (`networkx.algorithms.community`) or require denser evidence per link,
+then re-run the sweep and watch the number move. The harness makes that
+improvement measurable rather than a guess.
+
 ## Extending
 
 - **Taxonomy:** add facets/aliases in `data/taxonomy/cied_lexicon.json` — no code

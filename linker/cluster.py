@@ -41,36 +41,63 @@ class Clusterer:
         sig = [f"{f}={v}" for (f, v), c in counts.most_common() if c >= need]
         return sig
 
-    def clusters(self, singletons: bool = False) -> list[Cluster]:
+    def clusters(self, singletons: bool = False, method: str = "louvain") -> list[Cluster]:
+        """Group incidents into candidate networks.
+
+        method='louvain'  : community detection (weight-aware). Resists merging
+                            two real networks just because one bridge edge exists
+                            — the right default at scale.
+        method='components': connected components. Simple, but a single spurious
+                            edge fuses whole networks; use only for tiny sets.
+        """
+        if method == "components":
+            groups = [sorted(c) for c in nx.connected_components(self.graph)]
+        else:
+            groups = self._communities()
+
         out: list[Cluster] = []
         cid = 0
-        for comp in sorted(nx.connected_components(self.graph), key=len, reverse=True):
-            members = sorted(comp)
+        for members in sorted(groups, key=len, reverse=True):
+            members = sorted(members)
             if len(members) < 2 and not singletons:
                 continue
             cid += 1
-            internal = [
-                d["link"]
-                for u, v, d in self.graph.edges(members, data=True)
-                if u in comp and v in comp
-            ]
-            seen_pairs = set()
-            uniq = []
+            mset = set(members)
+            internal = [d["link"] for u, v, d in self.graph.edges(members, data=True)
+                        if u in mset and v in mset]
+            seen_pairs, uniq = set(), []
             for l in sorted(internal, key=lambda l: l.score, reverse=True):
                 pair = frozenset((l.a, l.b))
                 if pair not in seen_pairs:
-                    seen_pairs.add(pair)
-                    uniq.append(l)
-            internal = uniq
-            out.append(
-                Cluster(
-                    cluster_id=f"C{cid:02d}",
-                    members=members,
-                    signature=self._signature(members),
-                    internal_links=internal,
-                )
-            )
+                    seen_pairs.add(pair); uniq.append(l)
+            out.append(Cluster(
+                cluster_id=f"C{cid:02d}",
+                members=members,
+                signature=self._signature(members),
+                internal_links=uniq,
+            ))
         return out
+
+    def _communities(self) -> list[list[str]]:
+        """Weight-aware community detection over the link graph.
+
+        Runs Louvain per connected component (isolated nodes stay singletons).
+        Falls back to greedy modularity if Louvain is unavailable.
+        """
+        from networkx.algorithms import community as nx_comm
+        groups: list[list[str]] = []
+        for comp in nx.connected_components(self.graph):
+            sub = self.graph.subgraph(comp)
+            if sub.number_of_nodes() <= 2 or sub.number_of_edges() == 0:
+                groups.append(list(comp))
+                continue
+            try:
+                parts = nx_comm.louvain_communities(sub, weight="weight", seed=7)
+            except Exception:
+                parts = nx_comm.greedy_modularity_communities(sub, weight="weight")
+            for p in parts:
+                groups.append(list(p))
+        return groups
 
     def graph_payload(self) -> dict:
         """Node/edge lists for the HTML force-directed visualization."""

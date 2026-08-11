@@ -109,7 +109,7 @@ _HTML_TEMPLATE = r"""<!DOCTYPE html>
   html,body {{ margin:0; height:100%; background:var(--bg); color:var(--ink);
     font-family:ui-sans-serif,-apple-system,"Segoe UI",Roboto,sans-serif; }}
   .wrap {{ display:grid; grid-template-columns: 1fr 340px; grid-template-rows:auto 1fr;
-    height:100vh; }}
+    height:100vh; min-height:0; }}
   header {{ grid-column:1 / -1; display:flex; align-items:baseline; gap:20px;
     padding:14px 20px; border-bottom:1px solid var(--line); background:var(--panel); }}
   header h1 {{ font-size:15px; letter-spacing:.14em; text-transform:uppercase;
@@ -117,7 +117,7 @@ _HTML_TEMPLATE = r"""<!DOCTYPE html>
   header .stats {{ font-size:12px; color:var(--muted); letter-spacing:.05em;
     font-variant-numeric:tabular-nums; }}
   header .stats b {{ color:var(--accent); font-weight:700; }}
-  #stage {{ position:relative; overflow:hidden; }}
+  #stage {{ position:relative; overflow:hidden; min-height:520px; min-width:0; }}
   canvas {{ display:block; width:100%; height:100%; }}
   aside {{ background:var(--panel); border-left:1px solid var(--line);
     overflow-y:auto; padding:0; }}
@@ -179,8 +179,12 @@ CLUSTERS.forEach((c,i)=>{{ cidColor[c.cluster_id]=PALETTE[i%PALETTE.length]; }})
 const canvas=document.getElementById('c'), ctx=canvas.getContext('2d');
 let W=0,H=0,DPR=window.devicePixelRatio||1;
 function resize(){{ const r=canvas.parentElement.getBoundingClientRect();
-  W=r.width;H=r.height;canvas.width=W*DPR;canvas.height=H*DPR;ctx.setTransform(DPR,0,0,DPR,0,0); }}
-window.addEventListener('resize',resize);resize();
+  W=Math.max(r.width, 320) || Math.max(window.innerWidth-340,320);
+  H=Math.max(r.height,320) || Math.max(window.innerHeight-60,320);
+  canvas.width=W*DPR;canvas.height=H*DPR;ctx.setTransform(DPR,0,0,DPR,0,0); }}
+window.addEventListener('resize',resize);
+window.addEventListener('load',()=>{{resize();recenter();}});
+resize();
 
 const nodes=GRAPH.nodes.map((n,i)=>({{
   ...n, x:W/2+Math.cos(i)*120+(Math.random()-.5)*60,
@@ -219,8 +223,14 @@ function draw(){{
     ctx.fillStyle="#e6e9ec";ctx.font="700 9px ui-monospace,monospace";
     ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(n.id,n.x,n.y-16); }}
 }}
+function recenter(){{ for(const n of nodes){{
+  n.x=W/2+(Math.random()-.5)*Math.min(W,400);
+  n.y=H/2+(Math.random()-.5)*Math.min(H,400); n.vx=n.vy=0; }} }}
 function loop(){{ step();draw();requestAnimationFrame(loop); }}
 loop();
+// Re-measure a few times in case layout settles after first paint (the
+// header-only / blank-canvas failure mode on some browsers).
+[60,200,500].forEach(t=>setTimeout(()=>{{resize();}},t));
 
 // ---- interaction ----
 let drag=null,hoverNode=null,hoverEdge=null;const tip=document.getElementById('tip');

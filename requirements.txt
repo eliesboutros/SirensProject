@@ -1,0 +1,8 @@
+# Offline NLP + matching + graph
+spacy>=3.7,<3.9
+rapidfuzz>=3.0
+networkx>=3.0
+matplotlib>=3.6
+pytest>=8.0
+# spaCy English model (install separately, pinned):
+#   pip install https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl

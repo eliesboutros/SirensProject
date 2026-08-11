@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+link_chart.html
+link_chart.png
+result.json
+sample_brief.json

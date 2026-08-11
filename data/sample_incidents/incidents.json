@@ -1,0 +1,87 @@
+[
+  {
+    "id": "INC-001",
+    "date": "2026-03-04",
+    "location": "Route Copper, Al-Fakir District",
+    "grid": "38S MC 12345 67890",
+    "narrative": "On 04 MAR a victim-operated IED functioned against a logistics convoy along Route Copper near Al-Fakir District. Post-blast exploitation assessed a pressure plate trigger and a pressure cooker container. The main charge was reported as homemade explosive (HME). No secondary device observed. A local source associated the emplacement with a facilitator contactable on 0791-555-0182 and referenced an individual named Rashid Karim. A recovered component was photographed; photo: img_001.jpg.",
+    "photo": "img_001.jpg"
+  },
+  {
+    "id": "INC-002",
+    "date": "2026-03-11",
+    "location": "Route Copper, Al-Fakir District",
+    "grid": "38S MC 12360 67810",
+    "narrative": "A patrol struck a buried, pressure-initiated device on the shoulder of Route Copper. EOD render-safe was not possible; post-blast indicators included a pressure plate and a pressure cooker device. Charge assessed as HME. Reporting again referenced Rashid Karim as a suspected emplacer and the same contact number 0791-555-0182."
+  },
+  {
+    "id": "INC-003",
+    "date": "2026-03-19",
+    "location": "Green Village, Al-Fakir District",
+    "narrative": "Victim-operated IED against a resupply convoy near Green Village. Exploitation identified a pressure plate switch and a pressure cooker container; main charge homemade explosive. Emplacement style (dug-in roadside) is consistent with prior Route Copper events. Source line noted the Copper Road Cell."
+  },
+  {
+    "id": "INC-004",
+    "date": "2026-04-02",
+    "location": "Al-Fakir District",
+    "narrative": "Find/clearance: a buried pressure-plate IED with a pressure cooker container was located and rendered safe before functioning. Homemade explosive main charge. Attributed by source reporting to the Copper Road Cell; phone 0791-555-0182 recovered from pattern-of-life."
+  },
+  {
+    "id": "INC-010",
+    "date": "2026-03-07",
+    "location": "Hazar Junction, Sector 7",
+    "grid": "38S NC 55512 33321",
+    "narrative": "Complex ambush at Hazar Junction: a command-wire IED initiated against a convoy, immediately followed by small-arms fire. A secondary device targeted the likely casualty-collection point. Repurposed military ordnance (artillery shell) assessed as the main charge. Reporting linked the attack to the Northern Cell and an individual, Kamal Dost."
+  },
+  {
+    "id": "INC-011",
+    "date": "2026-03-15",
+    "location": "Sector 7 bypass",
+    "narrative": "Command-initiated IED (command wire) against a patrol on the Sector 7 bypass, part of a complex attack with a follow-up device emplaced for first responders. Main charge assessed as repurposed ordnance. Source reporting again named the Northern Cell and Kamal Dost."
+  },
+  {
+    "id": "INC-012",
+    "date": "2026-03-28",
+    "location": "Hazar Junction, Sector 7",
+    "narrative": "Command-wire initiated device with a secondary device (come-on) targeting the response element. Complex ambush with small-arms and IED. Artillery round assessed as the charge. Attributed to the Northern Cell."
+  },
+  {
+    "id": "INC-020",
+    "date": "2026-03-22",
+    "location": "Central Market, Old Town",
+    "narrative": "Remote-controlled IED (radio-controlled) concealed in a cardboard box functioned in a crowded market, indicating a civilian target. Main charge assessed as commercial explosive. No linkage to convoy-attack signatures."
+  },
+  {
+    "id": "INC-021",
+    "date": "2026-04-05",
+    "location": "Ministry Road",
+    "narrative": "A vehicle-borne IED (car bomb) detonated on Ministry Road. Timer-initiated. Main charge assessed as homemade explosive. Emplacement and employment differ from other reporting in this dataset."
+  },
+  {
+    "id": "INC-022",
+    "date": "2026-04-09",
+    "location": "North Gate",
+    "narrative": "A single victim-operated IED using a tripwire pull switch was located at North Gate and rendered safe. Container was a plastic jug. Homemade explosive charge. No corroborating network reporting."
+  },
+  {
+    "id": "INC-030",
+    "date": "2026-03-09",
+    "location": "Route Copper, Al-Fakir District",
+    "grid": "38S MC 12380 67840",
+    "photo": "img_030.jpg",
+    "narrative": "A find along Route Copper near Al-Fakir District: an intact 107mm rocket, olive green, fin-stabilised, approximately 1 m long, with a nose fuze fitted. Item was partially buried at the road verge. Photo: img_030.jpg. Assessed as abandoned/failed-launch ordnance rather than an emplaced IED."
+  },
+  {
+    "id": "INC-031",
+    "date": "2026-03-24",
+    "location": "Al-Fakir District",
+    "photo": "img_031.jpg",
+    "narrative": "Green Village road spur, Al-Fakir District: a corroded 107mm rocket, olive drab, finned, roughly 1 m, no visible fuze, lying exposed. Weathered condition suggests it has been in place some time. Photo image: img_031.jpg."
+  },
+  {
+    "id": "INC-032",
+    "date": "2026-04-01",
+    "location": "Green Village, Al-Fakir District",
+    "narrative": "Reported UXO near Green Village: a tan mortar round, conical nose, intact, small (60mm), no fuze visible. Handed to specialist team. No network reporting."
+  }
+]

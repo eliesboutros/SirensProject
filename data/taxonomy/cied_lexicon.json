@@ -1,0 +1,417 @@
+{
+  "_comment": "Descriptive analyst vocabulary for linking incident REPORTS. Values are categories that appear in after-action reporting (SIGACTs, storyboards). This taxonomy deliberately contains no construction, formulation, or quantity information — it exists to normalize how reports DESCRIBE events so similar events can be matched. Each canonical value maps to surface aliases the extractor will look for.",
+  "initiation": {
+    "victim_operated": [
+      "victim-operated",
+      "victim operated",
+      "vo ied",
+      "voied",
+      "pressure-initiated",
+      "pressure initiated"
+    ],
+    "command_initiated": [
+      "command-initiated",
+      "command initiated",
+      "command detonated",
+      "command-wire",
+      "command wire",
+      "cw ied"
+    ],
+    "remote_controlled": [
+      "remote-controlled",
+      "remote controlled",
+      "rcied",
+      "rc ied",
+      "radio-controlled",
+      "radio controlled"
+    ],
+    "time_delay": [
+      "time-delay",
+      "time delay",
+      "timer-initiated",
+      "timer initiated",
+      "delayed initiation"
+    ]
+  },
+  "trigger": {
+    "pressure_plate": [
+      "pressure plate",
+      "pressure-plate",
+      "pressure switch",
+      "pp switch",
+      "plank switch"
+    ],
+    "command_wire": [
+      "command wire",
+      "command-wire",
+      "hard wire",
+      "hardwire",
+      "trigger wire"
+    ],
+    "passive_infrared": [
+      "passive infrared",
+      "pir sensor",
+      "pir trigger",
+      "infrared trigger"
+    ],
+    "radio_control": [
+      "radio control",
+      "radio-control",
+      "rc trigger",
+      "long-range cordless",
+      "lrct"
+    ],
+    "victim_tripwire": [
+      "tripwire",
+      "trip wire",
+      "trip-wire",
+      "pull switch"
+    ]
+  },
+  "emplacement": {
+    "buried_roadside": [
+      "buried",
+      "roadside",
+      "dug in",
+      "dug-in",
+      "shoulder of the road",
+      "verge"
+    ],
+    "culvert": [
+      "culvert",
+      "drainage",
+      "under the road",
+      "under bridge"
+    ],
+    "vehicle_borne": [
+      "vehicle-borne",
+      "vehicle borne",
+      "vbied",
+      "car bomb",
+      "svbied"
+    ],
+    "thrown_placed": [
+      "thrown",
+      "hand-emplaced",
+      "hand emplaced",
+      "placed device",
+      "left in place"
+    ],
+    "concealed_object": [
+      "concealed in",
+      "hidden in",
+      "disguised as",
+      "concealed device"
+    ]
+  },
+  "container": {
+    "pressure_cooker": [
+      "pressure cooker",
+      "pressure-cooker",
+      "cooker device"
+    ],
+    "plastic_jug": [
+      "plastic jug",
+      "jerry can",
+      "jerrycan",
+      "yellow jug",
+      "water jug"
+    ],
+    "metal_drum": [
+      "metal drum",
+      "oil drum",
+      "barrel",
+      "metal barrel"
+    ],
+    "vehicle_body": [
+      "vehicle body",
+      "wheel well",
+      "under seat",
+      "trunk",
+      "boot of the car"
+    ],
+    "packaging": [
+      "cardboard box",
+      "sack",
+      "rice bag",
+      "flour bag",
+      "bag device"
+    ]
+  },
+  "charge_label": {
+    "hme_label": [
+      "homemade explosive",
+      "home-made explosive",
+      "hme",
+      "improvised mixture"
+    ],
+    "repurposed_ordnance": [
+      "repurposed ordnance",
+      "military ordnance",
+      "artillery shell",
+      "mortar round",
+      "uxo",
+      "unexploded ordnance"
+    ],
+    "commercial_label": [
+      "commercial explosive",
+      "commercial charge",
+      "mining explosive"
+    ]
+  },
+  "ttp": {
+    "secondary_device": [
+      "secondary device",
+      "secondary ied",
+      "follow-up device",
+      "come-on"
+    ],
+    "complex_ambush": [
+      "complex ambush",
+      "complex attack",
+      "combined attack",
+      "small-arms and ied"
+    ],
+    "daisy_chain": [
+      "daisy chain",
+      "daisy-chained",
+      "linked charges",
+      "multiple linked"
+    ],
+    "false_surrender": [
+      "false surrender",
+      "lure",
+      "come-on tactic",
+      "baited"
+    ],
+    "target_civilian": [
+      "market",
+      "crowded",
+      "civilian target",
+      "worshippers"
+    ],
+    "target_convoy": [
+      "convoy",
+      "patrol",
+      "logistics route",
+      "resupply"
+    ]
+  },
+  "object_type": {
+    "rocket_107mm": [
+      "107mm rocket",
+      "107 mm rocket",
+      "107mm",
+      "type-63 rocket",
+      "107-mm"
+    ],
+    "rocket_122mm": [
+      "122mm rocket",
+      "122 mm rocket",
+      "grad rocket",
+      "122mm"
+    ],
+    "rocket_generic": [
+      "rocket",
+      "rocket-propelled",
+      "rpg round",
+      "rpg-7 round"
+    ],
+    "mortar_round": [
+      "mortar round",
+      "mortar bomb",
+      "mortar shell",
+      "60mm mortar",
+      "81mm mortar",
+      "82mm mortar",
+      "120mm mortar"
+    ],
+    "artillery_shell": [
+      "artillery shell",
+      "artillery round",
+      "artillery projectile",
+      "155mm",
+      "152mm",
+      "howitzer round"
+    ],
+    "projectile_generic": [
+      "projectile",
+      "round",
+      "shell"
+    ],
+    "grenade": [
+      "grenade",
+      "hand grenade",
+      "rifle grenade"
+    ],
+    "landmine": [
+      "landmine",
+      "anti-personnel mine",
+      "anti-tank mine",
+      "at mine",
+      "ap mine"
+    ],
+    "submunition": [
+      "submunition",
+      "bomblet",
+      "cluster munition",
+      "dud submunition"
+    ],
+    "uxo_generic": [
+      "uxo",
+      "unexploded ordnance",
+      "unexploded",
+      "abandoned ordnance"
+    ]
+  },
+  "colour": {
+    "green": [
+      "green",
+      "olive",
+      "olive drab",
+      "od green",
+      "dark green"
+    ],
+    "tan": [
+      "tan",
+      "sand",
+      "sand-coloured",
+      "desert",
+      "khaki",
+      "beige"
+    ],
+    "black": [
+      "black",
+      "dark"
+    ],
+    "grey": [
+      "grey",
+      "gray",
+      "metallic grey"
+    ],
+    "rust": [
+      "rust",
+      "rusty",
+      "rust-coloured",
+      "reddish-brown"
+    ],
+    "yellow": [
+      "yellow",
+      "yellow band",
+      "yellow marking"
+    ],
+    "red": [
+      "red",
+      "red band",
+      "red marking"
+    ],
+    "blue": [
+      "blue",
+      "blue band"
+    ],
+    "white": [
+      "white",
+      "off-white"
+    ]
+  },
+  "shape": {
+    "fin_stabilised": [
+      "fin-stabilised",
+      "fin stabilized",
+      "finned",
+      "tail fins",
+      "tail fin",
+      "fins"
+    ],
+    "cylindrical": [
+      "cylindrical",
+      "tube",
+      "tubular",
+      "cylinder"
+    ],
+    "conical_nose": [
+      "conical",
+      "nose cone",
+      "pointed nose",
+      "ogive"
+    ],
+    "spherical": [
+      "spherical",
+      "ball-shaped",
+      "round ball"
+    ],
+    "boxed": [
+      "box-shaped",
+      "rectangular",
+      "boxed",
+      "crate"
+    ],
+    "warhead": [
+      "warhead",
+      "bulbous nose",
+      "shaped charge head"
+    ]
+  },
+  "condition": {
+    "intact": [
+      "intact",
+      "undamaged",
+      "complete",
+      "whole"
+    ],
+    "corroded": [
+      "corroded",
+      "rusted",
+      "rusty",
+      "weathered",
+      "degraded"
+    ],
+    "leaking": [
+      "leaking",
+      "weeping",
+      "seeping",
+      "exuding",
+      "crystallised"
+    ],
+    "damaged": [
+      "damaged",
+      "cracked",
+      "deformed",
+      "ruptured",
+      "split casing"
+    ],
+    "partially_buried": [
+      "partially buried",
+      "half-buried",
+      "protruding from the ground",
+      "dug in"
+    ]
+  },
+  "fuze": {
+    "fuze_fitted": [
+      "fuze fitted",
+      "fuze visible",
+      "nose fuze",
+      "fuzed",
+      "fuze present",
+      "fuze attached"
+    ],
+    "no_fuze_visible": [
+      "no fuze",
+      "fuze absent",
+      "unfuzed",
+      "no visible fuze"
+    ],
+    "impact_fuze": [
+      "impact fuze",
+      "point-detonating",
+      "pd fuze"
+    ],
+    "time_fuze": [
+      "time fuze",
+      "delay fuze",
+      "mechanical time fuze"
+    ]
+  },
+  "_comment_objects": "object_type/colour/shape/condition/fuze describe how a recovered or observed item is REPORTED, for record retrieval only. No construction, performance, or render-safe information is encoded."
+}

@@ -37,6 +37,9 @@ def menu():
         print("  5)  Analyse MY folder of reports (you give the path)")
         print("  6)  Generate a big synthetic dataset (100 reports + answer key)")
         print("  7)  Evaluate accuracy against the answer key (precision/recall)")
+        print("  8)  Open the web console (browser UI: type reports, compare, AI)")
+        print("  9)  Import a folder of reports INTO the database")
+        print(" 10)  Analyse EVERYTHING saved in the database")
         print("  0)  Quit")
         choice = input("\n  Choose a number: ").strip()
 
@@ -76,7 +79,7 @@ def menu():
             pause()
         elif choice == "6":
             print()
-            subprocess.run([PY, str(ROOT / "generate_dataset.py"),
+            subprocess.run([PY, str(ROOT / "generate_incidents.py"),
                             "--n", "100", "--out", str(ROOT / "data" / "generated")])
             print("\nGenerated into data/generated/. Analyse it with option 5 (path: data/generated)")
             pause()
@@ -85,6 +88,30 @@ def menu():
             subprocess.run([PY, str(ROOT / "evaluate.py"),
                             "--data", str(ROOT / "data" / "generated")])
             print("\n(If this says 'no incidents', run option 6 first to generate the data.)")
+            pause()
+        elif choice == "8":
+            print("\n  Starting the web console at http://127.0.0.1:5000")
+            print("  Your browser should open automatically.")
+            print("  Press Ctrl+C in this window to stop it and return here.\n")
+            try:
+                subprocess.run([PY, str(ROOT / "app.py")])
+            except KeyboardInterrupt:
+                pass
+            pause()
+        elif choice == "9":
+            path = input("  Path to your folder of .json/.txt reports "
+                         "(Enter for the samples): ").strip()
+            run(["import", path or str(DATA)])
+            pause()
+        elif choice == "10":
+            out = ROOT / "link_chart.html"
+            run(["db", "--html", str(out)])
+            if out.exists():
+                print(f"Opening {out} in your browser...")
+                try:
+                    webbrowser.open(out.as_uri())
+                except Exception:
+                    print(f"(Open this file yourself: {out})")
             pause()
         elif choice == "0":
             print("  Bye.")

@@ -262,6 +262,47 @@
       "unexploded ordnance",
       "unexploded",
       "abandoned ordnance"
+    ],
+    "air_delivered_bomb": [
+      "air-delivered bomb",
+      "aircraft bomb",
+      "aerial bomb",
+      "air-dropped bomb",
+      "guided bomb",
+      "glide bomb",
+      "gbu",
+      "jdam",
+      "gp bomb",
+      "general-purpose bomb"
+    ],
+    "tank_gun_projectile": [
+      "tank gun projectile",
+      "tank round",
+      "tank gun round",
+      "apfsds",
+      "sabot round"
+    ],
+    "recoilless_munition": [
+      "recoilless munition",
+      "recoilless round",
+      "recoilless gun projectile"
+    ],
+    "missile_generic": [
+      "missile",
+      "guided missile",
+      "cruise missile",
+      "ballistic missile",
+      "anti-tank guided missile",
+      "atgm",
+      "air-to-surface missile"
+    ],
+    "loitering_munition": [
+      "loitering munition",
+      "one-way attack drone",
+      "kamikaze drone",
+      "suicide drone",
+      "uav munition",
+      "attack uav"
     ]
   },
   "colour": {
@@ -312,6 +353,30 @@
     "white": [
       "white",
       "off-white"
+    ],
+    "brown": [
+      "brown",
+      "dark brown"
+    ],
+    "copper": [
+      "copper-coloured",
+      "copper coloured",
+      "coppery",
+      "copper finish"
+    ],
+    "gold": [
+      "gold",
+      "gold-coloured",
+      "brass",
+      "brass-coloured"
+    ],
+    "orange": [
+      "orange",
+      "orange band"
+    ],
+    "purple": [
+      "purple",
+      "violet"
     ]
   },
   "shape": {
@@ -321,7 +386,14 @@
       "finned",
       "tail fins",
       "tail fin",
-      "fins"
+      "fins",
+      "fixed fins",
+      "hinged fins",
+      "actuated fins",
+      "hinged/actuated fins",
+      "multiple fins",
+      "wide fins",
+      "enclosed fins"
     ],
     "cylindrical": [
       "cylindrical",
@@ -413,5 +485,160 @@
       "mechanical time fuze"
     ]
   },
-  "_comment_objects": "object_type/colour/shape/condition/fuze describe how a recovered or observed item is REPORTED, for record retrieval only. No construction, performance, or render-safe information is encoded."
+  "_comment_objects": "object_type/colour/shape/condition/fuze/functional_use/guidance/domain/marking_script describe how a recovered or observed item is REPORTED, for record retrieval only. The object-attribute vocabulary is aligned to the Open Source Munitions Portal (Airwars, osmp.ngo) controlled terms. No construction, formulation, performance, or render-safe information is encoded.",
+  "functional_use": {
+    "blast": [
+      "blast munition",
+      "blast warhead",
+      "high explosive",
+      "he warhead",
+      "he filled"
+    ],
+    "fragmentation": [
+      "fragmentation",
+      "fragmentation warhead",
+      "he-frag",
+      "he frag",
+      "frag warhead"
+    ],
+    "cluster": [
+      "cluster munition",
+      "cluster bomb",
+      "cluster warhead",
+      "dpicm"
+    ],
+    "shaped_charge": [
+      "shaped charge",
+      "hollow charge",
+      "heat warhead",
+      "heat round",
+      "tandem charge"
+    ],
+    "incendiary": [
+      "incendiary",
+      "incendiary munition",
+      "thermite",
+      "white phosphorus",
+      "willie pete"
+    ],
+    "illumination": [
+      "illumination",
+      "illuminating round",
+      "flare munition",
+      "star shell"
+    ],
+    "smoke": [
+      "smoke munition",
+      "smoke shell",
+      "obscurant"
+    ],
+    "chemical": [
+      "chemical munition",
+      "chemical warhead",
+      "cw munition"
+    ],
+    "kinetic": [
+      "kinetic munition",
+      "inert munition",
+      "kinetic warhead",
+      "no explosive filler"
+    ],
+    "decoy": [
+      "decoy munition",
+      "decoy",
+      "chaff",
+      "flare decoy"
+    ]
+  },
+  "guidance": {
+    "guided": [
+      "guided munition",
+      "guided",
+      "precision-guided",
+      "laser-guided",
+      "gps-guided",
+      "satellite-guided",
+      "terminal guidance"
+    ],
+    "unguided": [
+      "unguided munition",
+      "unguided",
+      "free-flight",
+      "free flight",
+      "unguided rocket",
+      "dumb bomb"
+    ]
+  },
+  "domain": {
+    "air_to_air": [
+      "air-to-air",
+      "air to air"
+    ],
+    "air_to_surface": [
+      "air-to-surface",
+      "air to surface",
+      "air-to-ground"
+    ],
+    "surface_to_air": [
+      "surface-to-air",
+      "surface to air",
+      "anti-aircraft"
+    ],
+    "surface_to_surface": [
+      "surface-to-surface",
+      "surface to surface"
+    ],
+    "drone_uav": [
+      "uav",
+      "drone",
+      "unmanned aerial",
+      "one-way attack drone"
+    ],
+    "anti_personnel_mine": [
+      "anti-personnel mine",
+      "antipersonnel mine",
+      "ap mine"
+    ],
+    "anti_vehicle_mine": [
+      "anti-vehicle mine",
+      "anti-tank mine",
+      "at mine",
+      "antitank mine"
+    ]
+  },
+  "marking_script": {
+    "latin": [
+      "latin script",
+      "latin markings",
+      "roman script"
+    ],
+    "cyrillic": [
+      "cyrillic",
+      "cyrillic script",
+      "cyrillic markings"
+    ],
+    "arabic": [
+      "arabic script",
+      "arabic markings"
+    ],
+    "farsi": [
+      "farsi",
+      "persian script",
+      "farsi markings"
+    ],
+    "hebrew": [
+      "hebrew script",
+      "hebrew markings"
+    ],
+    "chinese": [
+      "chinese script",
+      "chinese characters",
+      "hanzi markings"
+    ],
+    "numerical": [
+      "numerical markings",
+      "stencilled numbers",
+      "stenciled numbers"
+    ]
+  }
 }

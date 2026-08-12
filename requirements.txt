@@ -1,8 +1,20 @@
-# Offline NLP + matching + graph
+# --- core: offline NLP + matching + graph ---
 spacy>=3.7,<3.9
 rapidfuzz>=3.0
 networkx>=3.0
 matplotlib>=3.6
+click>=8.0          # required by spaCy's CLI; pin so a fresh clone doesn't miss it
 pytest>=8.0
-# spaCy English model (install separately, pinned):
-#   pip install https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl
+
+# --- web console (browser UI) ---
+flask>=3.0
+
+# --- optional AI assessment (LLM). Safe to skip; the app runs without it. ---
+anthropic>=0.40
+
+# spaCy English models (install separately, pinned):
+#   NER (required):
+#     pip install https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl
+#   Word vectors for meaning-based matching (recommended; without it the
+#   semantic layer falls back to text-overlap):
+#     pip install https://github.com/explosion/spacy-models/releases/download/en_core_web_md-3.8.0/en_core_web_md-3.8.0-py3-none-any.whl

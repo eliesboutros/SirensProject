@@ -66,13 +66,42 @@ Status: [x] done (verified) · [~] in progress · [ ] not started
   the place-name issue below is worth fixing before the demo.
 
 ## W4 — Freeze / polish / deliver
-- [ ] Tooltips on all form fields
+- [x] Tooltips on all form fields. Evidence 2026-10-13: every field on the
+  console, brief, review and dashboard forms has an (i) help (hover, tap,
+  keyboard focus; Escape/click-away closes); `tests/test_forms.py` checks every
+  field on all four forms; checked by hand in headless Chromium.
 - [ ] Regression test fails if F1 < 0.73
 - [ ] README with screenshots
 - [ ] Written report, first draft
 - [ ] Deck updated
 - [ ] Full demo rehearsal with the model pre-loaded
 - Stretch: CSV/JSON import · live threshold slider · completeness badge
+
+## UI: header, forms, map (branch `bassam/ui-header-forms-map`, 2026-10-13)
+- [x] Header pinned on all 8 pages. Evidence: headless Chromium at 1366x768,
+  scrolled to the bottom, header at top 0 and clickable; menu 64/64; 10-click
+  workflow zero errors.
+- [x] All 4 forms use the shared form CSS and macros (`forms_ui.py`,
+  `static/forms.css`, `static/forms.js`); field inventory in the session report.
+- [x] (i) help on every form field (see W4 tooltips above).
+- [x] Arabic round trip (report + note) passes; location suggestions and
+  "Not a known place" note work; filter chips add/remove; "Saved"
+  confirmation and Likely network box still work. Evidence: `tests/test_forms.py`
+  + headless Chromium at 1366 px and 390 px (no horizontal overflow).
+- [~] `/map` shows the offline street map, Lebanon only, road names on hover.
+  Evidence: works end to end with a SYNTHETIC test map file (headless Chromium,
+  all outside requests blocked: map draws, mask + pan limit, road hover shows
+  English/Arabic name and ref, popups, HTTP Range). **Needs laptop:** build or
+  download the real OSM file (`scripts/map/build_map.sh`), record its size and
+  checksum, publish it as a release asset, then check it on Elie's laptop.
+- [x] No request outside 127.0.0.1 with the internet blocked (browser check;
+  `tests/test_map.py` + `tests/test_vendor.py` cover style, fonts, glyphs,
+  sprites, scripts and stylesheets).
+- [x] MGRS grid (100 km / 10 km / 1 km), live readout and click-to-copy work;
+  incident popups show MGRS marked approx. (caza centre) unless a grid was filed.
+- [x] MGRS tests pass against independent references (`mgrs`, `pyproj`),
+  including both sides of 36 E (`tests/test_mgrs.py`).
+- Tests: 89 pass (was 57). Accuracy re-measured: unchanged.
 
 ## Measured accuracy (only numbers we actually measured)
 | Date | Data | Threshold | P | R | F1 |
@@ -81,6 +110,7 @@ Status: [x] done (verified) · [~] in progress · [ ] not started
 | 2026-10-12 | 100 synthetic, seed 7 | 0.25 | 0.628 | 0.888 | 0.736 |
 | 2026-10-12 (after W2, matcher untouched) | 100 synthetic, seed 7 | 0.25 | 0.628 | 0.888 | 0.736 |
 | 2026-10-12 (after W3, matcher untouched) | 100 synthetic, seed 7 | 0.25 | 0.628 | 0.888 | 0.736 |
+| 2026-10-13 (after header/forms/map/MGRS, matcher untouched) | 100 synthetic, seed 7 | 0.25 | 0.628 | 0.888 | 0.736 |
 
 Target: P 0.90 / R 0.80 / F1 0.85.
 
@@ -140,3 +170,11 @@ Target: P 0.90 / R 0.80 / F1 0.85.
   the open menu being covered by page content on console and brief. 57 tests
   pass; 64/64 menu clicks and the 10-click workflow pass in headless
   Chromium; accuracy re-measured: unchanged (0.628 / 0.888 / 0.736).
+- 2026-10-13 (Bassam + Claude Code, branch `bassam/ui-header-forms-map`):
+  pinned header; one shared form design with (i) help on every field, Arabic
+  input, place suggestions, chips, Saving/Saved, calm error pages; /map replaced
+  by an offline OpenStreetMap street map (MapLibre + PMTiles, Lebanon only,
+  road hover) with an MGRS grid, readout, click-to-copy and MGRS in popups.
+  89 tests pass; accuracy unchanged. Needs laptop: real map file (build,
+  size, checksum, release asset), Wi-Fi-off run, map speed on Elie's laptop,
+  Ollama check, timed fresh install. PR for this branch not opened yet (review first).

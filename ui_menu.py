@@ -24,7 +24,7 @@ MENU = [
         ("dashboard", "Dashboard", "dashboard.dashboard_page", "Statistics and charts over the record"),
         ("review", "Review links", "review.review_page", "Confirm, reject or flag each link"),
         ("tree", "Link tree", "link_tree", "Graph of linked incidents and networks"),
-        ("map", "Map", "incident_map", "Incidents by caza"),
+        ("map", "Map", "incident_map", "Offline street map, incidents and MGRS grid"),
     ]),
     ("Data", [
         ("demo", "Load demo data", "demo.demo_page", "40 fabricated sample incidents"),
@@ -55,6 +55,8 @@ _STYLE = """<style>
 .sm .sm-panel a.sm-item strong{display:block;font-weight:600}
 .sm .sm-panel a.sm-item span{display:block;font-size:12px;color:#7a8791;margin-top:2px}
 .sm .sm-panel a.sm-item.on span{color:#7a4e12}
+.sm-host{transition:box-shadow .2s ease}
+.sm-host.sm-scrolled{box-shadow:0 2px 10px rgba(22,32,43,.18)}
 </style>"""
 
 _SCRIPT = """<script>
@@ -62,12 +64,21 @@ _SCRIPT = """<script>
   // .open = opened by click/keyboard; .shut = closed on purpose, so hover
   // does not reopen it until the pointer leaves.
   var groups = document.querySelectorAll('.sm .sm-group');
-  // Lift the bar holding the menu above the page body, so an open panel is
-  // never covered by content that shares the bar's stacking layer.
+  // Pin the bar holding the menu to the top of the page (sticky keeps it in the
+  // page flow, so no content hides under it) and lift it above the page body,
+  // so an open panel is never covered by content sharing the bar's layer.
   document.querySelectorAll('.sm').forEach(function(nav){
     var host = nav.parentElement;
-    if (getComputedStyle(host).position === 'static') host.style.position = 'relative';
+    host.classList.add('sm-host');
+    host.style.position = 'sticky';
+    host.style.top = '0';
     host.style.zIndex = '40';
+    function fit(){   // anchors (#section links) land just below the pinned bar
+      document.documentElement.style.scrollPaddingTop = (host.offsetHeight + 12) + 'px'; }
+    function shade(){ host.classList.toggle('sm-scrolled', window.scrollY > 4); }
+    fit(); shade();
+    window.addEventListener('resize', fit);
+    window.addEventListener('scroll', shade, {passive: true});
   });
   function set(g, open){ g.classList.toggle('open', open); g.classList.toggle('shut', !open);
     g.querySelector('.sm-head').setAttribute('aria-expanded', open ? 'true' : 'false'); }

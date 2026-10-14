@@ -13,6 +13,8 @@ pip install -r requirements.txt
 echo "==> Installing spaCy models (NER + word vectors)"
 pip install https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl
 pip install https://github.com/explosion/spacy-models/releases/download/en_core_web_md-3.8.0/en_core_web_md-3.8.0-py3-none-any.whl
+echo "==> Offline street map (one-time download; Sirens works without it)"
+bash scripts/map/get_map.sh || true
 echo ""
 echo "==> Done. To use Sirens:"
 echo "      source .venv/bin/activate"

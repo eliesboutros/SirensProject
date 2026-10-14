@@ -1,0 +1,5 @@
+# Test / development only (not needed to run Sirens)
+pmtiles==3.8.1            # writes the synthetic test map (scripts/map/make_test_map.py)
+mapbox-vector-tile==2.2.0 # encodes its vector tiles
+mgrs==1.5.4               # independent MGRS reference for tests
+pyproj==3.8.0             # independent UTM reference for tests

@@ -19,3 +19,9 @@ def test_page_has_the_shared_menu(client, path, label):
     assert hrefs == ["/", "/brief", "/dashboard", "/review", "/tree", "/map", "/demo", "/vendor-check"]
     current = re.findall(r'aria-current="page" href="[^"]+"><strong>([^<]+)</strong>', html)
     assert current == [label]
+
+
+def test_menu_pins_its_header_and_offsets_anchors(client):
+    html = client.get("/demo").data.decode()
+    assert "host.style.position = 'sticky'" in html
+    assert "scrollPaddingTop" in html

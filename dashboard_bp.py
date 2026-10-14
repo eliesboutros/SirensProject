@@ -15,7 +15,7 @@ import re
 from collections import Counter
 from datetime import date
 
-from flask import Blueprint, render_template_string, request
+from flask import Blueprint, render_template_string, request, url_for
 
 from linker import decisions, stats, store
 from linker.match import Matcher
@@ -51,7 +51,8 @@ def read_filters(args, incidents) -> dict:
         "initiation": args.get("initiation", "") if args.get("initiation", "") in inits else "",
         "feature": args.get("feature", "") if args.get("feature", "") in features else "",
     }
-    return f | {"areas": areas, "inits": inits, "feature_opts": [g for g in feature_opts if g[1]]}
+    return f | {"areas": areas, "inits": inits, "init_opts": [(v, _label(v)) for v in inits],
+                "feature_opts": [g for g in feature_opts if g[1]]}
 
 
 def apply_filters(incidents, f) -> list:
@@ -111,6 +112,28 @@ def by_initiation(incidents) -> dict:
     return {"labels": labels, "values": values, "keys": [k for k, _ in counts], "multi": multi}
 
 
+def active_chips(f) -> list[tuple[str, str]]:
+    """One (label, remove-url) per active filter; each URL keeps the other filters."""
+    params = {"from": f["start"], "to": f["end"], "area": f["area"],
+              "initiation": f["initiation"], "feature": f["feature"]}
+    params = {k: v for k, v in params.items() if v}
+
+    def describe(k, v):
+        if k == "from":
+            return f"From {v}"
+        if k == "to":
+            return f"To {v}"
+        if k == "area":
+            return f"Area: {v}"
+        if k == "initiation":
+            return f"Method: {_label(v)}"
+        facet, value = v.split(":", 1)
+        return f"{stats.FACET_LABELS.get(facet, facet)}: {_label(value)}"
+
+    return [(describe(k, v), url_for("dashboard.dashboard_page", **{o: w for o, w in params.items() if o != k}))
+            for k, v in params.items()]
+
+
 def link_stats(view_links, current) -> dict:
     """Links whose two incidents are both in view, and how many an analyst confirmed."""
     pairs = {tuple(sorted((l.a, l.b))) for l in view_links}
@@ -135,7 +158,7 @@ def dashboard_page():
         _TEMPLATE, f=f, active=active, total=len(incidents), shown=shown,
         n_areas=len({i.location for i in shown if i.location}),
         stats=link_stats(view_links, current), nets=nets, strength=strength,
-        sig=sig, qual=stats.quality(shown),
+        sig=sig, qual=stats.quality(shown), active_chips=active_chips(f),
         charts={"timeline": timeline(shown), "area": by_area(shown),
                 "initiation": by_initiation(shown), "signatures": sig,
                 "networks": {"labels": nets["labels"], "values": nets["values"]},
@@ -143,7 +166,7 @@ def dashboard_page():
         label=_label, today=date.today().isoformat())
 
 
-_TEMPLATE = r"""<!doctype html>
+_TEMPLATE = r"""{% import "forms_ui.html" as fm %}<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -171,16 +194,7 @@ _TEMPLATE = r"""<!doctype html>
   .wrap{max-width:1400px;margin:0 auto;padding:32px 48px 90px}
   @media(max-width:1000px){.wrap{padding:22px 18px 60px}}
   h1{font-size:20px;font-weight:600;margin:0 0 14px}
-  .filters{display:flex;flex-wrap:wrap;gap:14px 18px;align-items:flex-end;background:var(--panel);
-        border:1px solid var(--line);border-radius:9px;padding:16px 20px;margin-bottom:22px;
-        box-shadow:0 1px 2px rgba(22,32,43,.04),0 4px 16px rgba(22,32,43,.05)}
-  .filters label{display:block;font-size:11.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px}
-  .filters input,.filters select{padding:7px 9px;border:1px solid var(--line);border-radius:4px;
-        font-family:var(--sans);font-size:13.5px;background:#fcfdfc;color:var(--ink);min-width:150px}
-  .btn{font-family:var(--sans);font-size:13.5px;font-weight:600;padding:8px 15px;border-radius:4px;
-       border:1px solid var(--ink);background:var(--ink);color:#fff;cursor:pointer}
-  .reset{font-size:13px;margin-left:4px}
-  .scope{font-size:13px;color:var(--ink-soft);margin:-8px 0 20px}
+  .scope{font-size:13px;color:var(--ink-soft);margin:4px 0 20px}
   .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;margin-bottom:22px}
   .tile{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:16px 20px;
         box-shadow:0 1px 2px rgba(22,32,43,.04),0 4px 16px rgba(22,32,43,.05)}
@@ -188,14 +202,14 @@ _TEMPLATE = r"""<!doctype html>
   .tile .v{font-size:30px;font-weight:600;margin-top:4px}
   .tile .s{font-size:12px;color:var(--weak)}
   .grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:22px}
-  @media(max-width:1000px){.grid{grid-template-columns:1fr}}
+  @media(max-width:1000px){.grid{grid-template-columns:minmax(0,1fr)}}
   .card{background:var(--panel);border:1px solid var(--line);border-radius:9px;
         box-shadow:0 1px 2px rgba(22,32,43,.04),0 4px 16px rgba(22,32,43,.05)}
   .card.wide{grid-column:1/-1}
   .card h2{margin:0;padding:14px 20px;border-bottom:1px solid var(--line-2);
            font-size:12px;letter-spacing:.14em;text-transform:uppercase;
            color:var(--ink-soft);font-family:var(--mono);font-weight:600}
-  .card .body{padding:18px 20px 16px}
+  .card .body{padding:18px 20px 16px;overflow-x:auto}   /* wide tables scroll inside their card on phones */
   .plot{position:relative;height:260px}
   .plot.tall{height:320px}
   .hint{font-size:12px;color:var(--weak);margin-top:8px}
@@ -211,10 +225,9 @@ _TEMPLATE = r"""<!doctype html>
   .jump a{font-family:var(--mono);font-size:12px;text-decoration:none;color:var(--ink-soft);background:#fff;
         border:1px solid var(--line);border-radius:3px;padding:5px 11px}
   .jump a:hover{border-color:var(--ink-soft)}
-  h2.sec{font-size:15px;font-weight:600;margin:34px 0 4px;scroll-margin-top:16px}
+  h2.sec{font-size:15px;font-weight:600;margin:34px 0 4px}
   p.lede{font-size:13px;color:var(--weak);margin:0 0 14px}
   .cardtools{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
-  .cardtools label{font-size:12px;font-weight:600;color:var(--ink-soft)}
   .cardtools select{padding:6px 9px;border:1px solid var(--line);border-radius:4px;font-family:var(--sans);
         font-size:13.5px;background:#fcfdfc;color:var(--ink)}
   .chips{display:flex;flex-wrap:wrap;gap:4px}
@@ -233,6 +246,7 @@ _TEMPLATE = r"""<!doctype html>
   .missing{font-size:12px;color:var(--ink-soft)}
   .mono{font-family:var(--mono)}
 </style>
+{{ fm.assets() }}
 </head>
 <body>
 <div class="bar">
@@ -241,26 +255,24 @@ _TEMPLATE = r"""<!doctype html>
 </div>
 <div class="wrap">
   <h1>Dashboard</h1>
-  <form class="filters" method="get" action="{{ url_for('dashboard.dashboard_page') }}">
-    <div><label for="from">From</label><input type="date" id="from" name="from" value="{{ f.start }}" max="{{ today }}"></div>
-    <div><label for="to">To</label><input type="date" id="to" name="to" value="{{ f.end }}" max="{{ today }}"></div>
-    <div><label for="area">Area</label>
-      <select id="area" name="area"><option value="">all areas</option>
-        {% for a in f.areas %}<option value="{{ a }}" {{ 'selected' if a == f.area else '' }}>{{ a }}</option>{% endfor %}
-      </select></div>
-    <div><label for="initiation">Initiation method</label>
-      <select id="initiation" name="initiation"><option value="">all methods</option>
-        {% for v in f.inits %}<option value="{{ v }}" {{ 'selected' if v == f.initiation else '' }}>{{ label(v) }}</option>{% endfor %}
-      </select></div>
-    <div><label for="feature">Signature feature</label>
-      <select id="feature" name="feature"><option value="">any feature</option>
+  <form class="f-form f-filterbar" method="get" action="{{ url_for('dashboard.dashboard_page') }}" novalidate aria-label="Dashboard filters">
+    {{ fm.input("from", "From", "from", type="date", value=f.start, optional=True, extra='max="' ~ today ~ '"') }}
+    {{ fm.input("to", "To", "to", type="date", value=f.end, optional=True, extra='max="' ~ today ~ '"') }}
+    {{ fm.select("area", "Area", "area", f.areas, selected=f.area, blank="all areas", optional=True) }}
+    {{ fm.select("initiation", "Initiation method", "initiation", f.init_opts, selected=f.initiation, blank="all methods", optional=True) }}
+    <div class="f-field">
+      {{ fm.label("feature", "Signature feature", "feature", optional=True) }}
+      <select class="f-input" id="feature" name="feature" aria-describedby="e-feature">
+        <option value="">any feature</option>
         {% for group, opts in f.feature_opts %}<optgroup label="{{ group }}">
           {% for v, l in opts %}<option value="{{ v }}" {{ 'selected' if v == f.feature else '' }}>{{ l }}</option>{% endfor %}
         </optgroup>{% endfor %}
-      </select></div>
-    <div><button class="btn" type="submit">Apply</button>
-      {% if active %}<a class="reset" href="{{ url_for('dashboard.dashboard_page') }}">reset</a>{% endif %}</div>
+      </select>
+      <div class="f-error" id="e-feature" aria-live="polite"></div>
+    </div>
+    <div class="f-actions"><button class="f-btn" type="submit" data-busy-text="Applying…">Apply</button></div>
   </form>
+  {{ fm.chips(active_chips, url_for('dashboard.dashboard_page')) }}
   <p class="scope">{% if active %}Showing {{ shown|length }} of {{ total }} incidents matching the filters.{% else %}Showing all {{ total }} incidents on record.{% endif %}
     Counts describe the record only; every link is a lead for an analyst, not a conclusion.</p>
 
@@ -314,7 +326,7 @@ _TEMPLATE = r"""<!doctype html>
   <p class="lede">Which descriptive features the reports in view mention most. An incident can report more than one value.</p>
   <div class="grid">
     <section class="card wide"><h2>Signature breakdown</h2><div class="body">
-      <div class="cardtools"><label for="facet">Feature</label>
+      <div class="cardtools f-form">{{ fm.label("facet", "Feature", "facet") }}
         <select id="facet">{% for k, v in sig.items() %}<option value="{{ k }}" {{ 'selected' if loop.first else '' }}>{{ v.name }}</option>{% endfor %}</select>
       </div>
       <div class="plot tall"><canvas id="c-sig" role="img" aria-label="Bar chart of the selected signature feature"></canvas></div>

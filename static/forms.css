@@ -1,0 +1,119 @@
+/* Sirens shared form design: used by every form (console, brief, review, dashboard).
+   Palette: ink #16202b, accent #a8703a, surface #f4f6f3. Calm, spacious, soft shadows. */
+
+.f-form{--f-ink:#16202b;--f-soft:#3a4652;--f-weak:#6f7c86;--f-line:#dfe4e0;--f-line2:#eef0ee;
+  --f-accent:#a8703a;--f-accent-soft:#f0e6d4;--f-err:#a4332b;--f-err-soft:#fbeceb;--f-ok:#3d6b45;--f-ok-soft:#e7efe5;
+  --f-radius:10px;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--f-ink)}
+
+/* Sections: grouped cards, each with a short heading */
+.f-section{border:1px solid var(--f-line);border-radius:var(--f-radius);background:#fff;margin:0 0 16px;
+  padding:16px 20px 6px;box-shadow:0 1px 2px rgba(22,32,43,.03),0 3px 10px rgba(22,32,43,.04);min-width:0}
+.f-legend{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:11.5px;font-weight:600;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--f-soft);padding:0 6px;margin-left:-6px}
+.f-sub{margin:-2px 0 10px;font-size:12.5px;color:var(--f-weak)}
+.f-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 18px}
+.f-wide{grid-column:1/-1}
+@media(max-width:640px){.f-grid{grid-template-columns:1fr}.f-section{padding:14px 14px 4px}}
+
+/* Fields */
+.f-field{margin:0 0 14px;min-width:0}
+.f-labelrow{display:flex;align-items:center;gap:7px;margin:0 0 6px;position:relative}
+.f-form .f-label{font-size:13px;font-weight:600;color:var(--f-soft);letter-spacing:.01em}
+.f-form .f-opt{font-weight:400;color:var(--f-weak);font-size:12px}
+.f-form .f-input{width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #cfd6d1;border-radius:8px;
+  background:#fcfdfc;color:var(--f-ink);font:inherit;font-size:14.5px;line-height:1.4;
+  transition:border-color .15s ease, box-shadow .15s ease}
+.f-form textarea.f-input{min-height:150px;resize:vertical;line-height:1.6}
+.f-form select.f-input{appearance:auto;padding-right:8px}
+.f-form .f-input::placeholder{color:#9aa4ab}
+.f-form .f-input:hover{border-color:#b9c2bc}
+.f-form .f-input:focus{outline:none;border-color:var(--f-accent);box-shadow:0 0 0 3px rgba(168,112,58,.22)}
+.f-form .f-mono{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:13.5px}
+.f-form .f-input[aria-invalid="true"]{border-color:var(--f-err);background:#fffafa}
+.f-form .f-input[aria-invalid="true"]:focus{box-shadow:0 0 0 3px rgba(164,51,43,.18)}
+.f-error{font-size:12.5px;color:var(--f-err);margin-top:5px;min-height:0}
+.f-error:empty{display:none}
+.f-error::before{content:"\26A0\FE0E  "}
+.f-note{font-size:12.5px;color:var(--f-soft);background:var(--f-line2);border-radius:6px;padding:6px 10px;margin-top:6px}
+.f-hint{font-size:12px;color:var(--f-weak);margin-top:5px}
+
+/* Choices (checkbox / radio groups) */
+.f-choices{display:flex;flex-wrap:wrap;gap:8px}
+.f-form .f-choice{display:inline-flex;align-items:center;gap:7px;padding:6px 11px;border:1px solid var(--f-line);
+  border-radius:999px;background:#fff;font-size:13.5px;cursor:pointer;user-select:none}
+.f-form .f-choice:hover{border-color:#b9c2bc}
+.f-form .f-choice input{margin:0;width:15px;height:15px;accent-color:var(--f-accent)}
+.f-form .f-choice:has(input:checked){background:var(--f-accent-soft);border-color:#e0c9a4}
+.f-form .f-choice:has(input:focus-visible){box-shadow:0 0 0 3px rgba(168,112,58,.22)}
+
+/* Toggle (single checkbox) */
+.f-togglefield{margin-bottom:6px}
+.f-form .f-toggle{display:inline-flex;align-items:center;gap:8px;font-size:13.5px;font-weight:600;color:var(--f-soft);cursor:pointer}
+.f-form .f-toggle input{width:16px;height:16px;margin:0;accent-color:var(--f-accent)}
+.f-form .f-toggle.is-disabled{color:var(--f-weak);cursor:not-allowed}
+
+/* (i) help: opens on hover, tap or keyboard focus */
+.f-help{flex:0 0 auto;width:18px;height:18px;border-radius:50%;border:1px solid #c3cbc5;background:#fff;color:var(--f-soft);
+  font:600 11px/16px Georgia,"Times New Roman",serif;font-style:italic;text-align:center;padding:0;cursor:help}
+.f-help:hover,.f-help[aria-expanded="true"]{border-color:var(--f-accent);color:var(--f-accent)}
+.f-help:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(168,112,58,.3)}
+.f-tip{position:absolute;z-index:30;left:0;top:calc(100% + 6px);width:min(320px,86vw);background:#fff;color:var(--f-ink);
+  border:1px solid var(--f-line);border-radius:8px;padding:10px 12px;font-size:12.5px;font-weight:400;line-height:1.5;
+  letter-spacing:0;text-transform:none;box-shadow:0 2px 6px rgba(22,32,43,.08),0 12px 28px rgba(22,32,43,.14)}
+.f-tip[hidden]{display:none}
+
+/* "More details" */
+.f-more{border:1px dashed #cfd6d1;border-radius:var(--f-radius);margin:0 0 16px;padding:0 20px;background:rgba(255,255,255,.6)}
+.f-more[open]{border-style:solid;background:#fff;padding-bottom:6px;box-shadow:0 1px 2px rgba(22,32,43,.03),0 3px 10px rgba(22,32,43,.04)}
+.f-more-sum{cursor:pointer;list-style:none;padding:13px 0;font-size:13.5px;font-weight:600;color:var(--f-soft)}
+.f-more-sum::-webkit-details-marker{display:none}
+.f-more-sum::before{content:"\25B8";display:inline-block;width:16px;color:var(--f-accent);transition:transform .15s ease}
+.f-more[open] > .f-more-sum::before{transform:rotate(90deg)}
+.f-more-sum:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(168,112,58,.22);border-radius:6px}
+
+/* Actions, saving, confirmation, server errors */
+.f-actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px 12px;margin:4px 0 0}
+.f-btn{font:inherit;font-size:14px;font-weight:600;padding:10px 18px;border-radius:8px;border:1px solid var(--f-ink);
+  background:var(--f-ink);color:#fff;cursor:pointer;transition:background .15s ease}
+.f-btn:hover{background:#22303d}
+.f-btn:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(168,112,58,.35)}
+.f-btn.ghost{background:#fff;color:var(--f-ink);border-color:#c3cbc5}
+.f-btn.ghost:hover{background:#f4f6f3}
+.f-btn[aria-busy="true"]{opacity:.7;cursor:progress}
+.f-btn.small{padding:7px 13px;font-size:13px}
+.f-alert{background:var(--f-err-soft);border:1px solid #e7b7b2;color:var(--f-err);padding:10px 14px;border-radius:8px;
+  font-size:13.5px;margin:0 0 14px}
+.f-saved{display:flex;align-items:center;gap:8px;background:var(--f-ok-soft);border:1px solid #c9dcc6;color:var(--f-ok);
+  padding:10px 14px;border-radius:8px;font-size:13.5px;margin:0 0 14px}
+.f-saved::before{content:"\2713";font-weight:700}
+
+/* Filter bar + chips (review and dashboard) */
+.f-filterbar{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px 16px;background:#fff;border:1px solid var(--f-line);
+  border-radius:var(--f-radius);padding:14px 18px 4px;margin:0 0 12px;box-shadow:0 1px 2px rgba(22,32,43,.03),0 3px 10px rgba(22,32,43,.04)}
+.f-filterbar .f-field{margin-bottom:12px;min-width:150px;flex:1 1 150px;max-width:240px}
+.f-filterbar .f-actions{margin-bottom:12px}
+.f-seg{display:flex;flex-wrap:wrap;gap:6px}
+.f-seg a{font-size:13px;text-decoration:none;color:var(--f-soft);background:#fff;border:1px solid var(--f-line);border-radius:999px;padding:6px 12px}
+.f-seg a:hover{border-color:#b9c2bc}
+.f-seg a.on{background:var(--f-ink);border-color:var(--f-ink);color:#fff}
+.f-chips{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 16px}
+.f-chip{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;text-decoration:none;color:#6b4410;
+  background:var(--f-accent-soft);border:1px solid #e6d3b0;border-radius:999px;padding:4px 10px}
+.f-chip span{font-size:15px;line-height:1}
+.f-chip:hover{border-color:var(--f-accent)}
+.f-clear{font-size:12.5px;color:#2d5b8e}
+
+/* Inline note form used on review cards */
+.f-inline{display:flex;gap:8px;align-items:flex-start}
+.f-inline .f-field{flex:1;margin-bottom:4px}
+.f-inline .f-btn{margin-top:26px}
+@media(max-width:640px){.f-inline{flex-direction:column}.f-inline .f-btn{margin-top:0}}
+
+/* Grid reference rows (shown/hidden by the console's UTM / Lat-Lon switch) */
+.f-gridrow{display:flex;flex-wrap:wrap;gap:0 14px}
+.f-gridrow > .f-field{flex:1 1 150px}
+.f-gridrow > .f-field:has(#utm_zone){flex:0 0 96px}
+
+/* Reset page-level label/input rules inside shared forms */
+.f-form label{margin:0}
+.f-form .f-labelrow label.f-label{display:inline}

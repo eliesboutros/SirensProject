@@ -27,6 +27,7 @@ from linker.match import Matcher
 from linker.cluster import Clusterer
 from linker import store, semantic, ai, reference, report
 from linker.models import Incident
+from linker.grid_ref import to_mgrs
 
 ROOT = pathlib.Path(__file__).resolve().parent
 TAXONOMY = ROOT / "data" / "taxonomy" / "cied_lexicon.json"
@@ -50,6 +51,8 @@ from review_bp import review_bp; app.register_blueprint(review_bp)
 from dashboard_bp import dashboard_bp; app.register_blueprint(dashboard_bp)
 from network_bp import network_bp; app.register_blueprint(network_bp)
 import ui_menu; ui_menu.register(app)
+import map_bp; app.register_blueprint(map_bp.map_bp)
+import forms_ui; forms_ui.register(app, lambda: sorted(set(_LOCATION_ALIASES) | set(_CAZA_NAMES)))
 
 # Load the extractor once (spaCy start-up cost paid a single time).
 _EXTRACTOR = FeatureExtractor(TAXONOMY, use_ner=True)
@@ -290,7 +293,7 @@ def _status() -> dict:
     }
 
 
-TEMPLATE = r"""{% macro ref_card(e) %}
+TEMPLATE = r"""{% import "forms_ui.html" as f %}{% macro ref_card(e) %}
 <div class="refcard">
   <div class="reftitle">{{ e.label }} <span class="refkey mono">{{ e.object_type }}</span></div>
   {% if e.summary %}<p class="refsum">{{ e.summary }}</p>{% endif %}
@@ -466,6 +469,7 @@ TEMPLATE = r"""{% macro ref_card(e) %}
     @keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
   }
 </style>
+{{ f.assets() }}
 </head>
 <body>
 <div class="bar">
@@ -479,114 +483,58 @@ TEMPLATE = r"""{% macro ref_card(e) %}
 </div>
 
 <div class="wrap">
-{% if error %}<div class="err">{{ error }}</div>{% endif %}
 <div class="grid">
 
   <!-- LEFT: input -->
   <section class="card">
     <h2>New report</h2>
     <div class="body">
-      <form method="post" action="/analyse" enctype="multipart/form-data">
-        <div class="row">
-          <div class="field">
-            <label for="incident_id">Incident ID</label>
-            <input type="text" id="incident_id" name="incident_id" class="mono"
-                   value="{{ form.incident_id or suggested_id }}">
+      {% if result and result.saved %}<div class="f-saved" role="status">Saved <strong class="mono">{{ result.incident.incident_id }}</strong> to the database. Its likely network is shown on the right.</div>{% endif %}
+      <form class="f-form" method="post" action="/analyse" enctype="multipart/form-data" novalidate>
+        {{ f.form_error(error) }}
+        {% call f.section("When & where") %}
+          {{ f.input("incident_id", "Incident ID", "incident_id", value=(form.incident_id or suggested_id), mono=True) }}
+          {{ f.input("date", "Date", "date", value=form.date, placeholder="2026-03-04", rules="date-advisory", optional=True) }}
+          {{ f.select("caza", "Caza (district)", "caza", cazas, selected=form.caza, blank="— select caza —", optional=True) }}
+          {{ f.input("street", "Town, village or street", "street", value=form.street, placeholder="e.g. Yaroun, main road",
+                     list="placelist", rules="place:placelist:caza", optional=True) }}
+          <datalist id="placelist">{% for pl in map_places() %}<option value="{{ pl }}">{% endfor %}</datalist>
+        {% endcall %}
+        {% call f.section("What happened") %}
+          {{ f.textarea("narrative", "Report narrative", "narrative", value=form.narrative, rules="required",
+                        placeholder="Paste the incident report here. Free text is fine: messy field reporting is what Sirens is built for.",
+                        required_msg="Paste the report narrative: it is the one field Sirens needs.") }}
+          {{ f.select("munition", "Munition / device type", "munition", munitions, selected=form.munition, blank="— select type —", optional=True) }}
+        {% endcall %}
+        {% set more_open = form.item_color or sel_conditions or form.utm_e or form.utm_n or form.lat or form.lon %}
+        {% call f.more("More details", open=more_open, sub="colour, condition, grid reference, photo") %}
+          {{ f.input("item_color", "Item colour / markings", "item_color", value=form.item_color, list="colorlist", placeholder="olive, rust, unpainted…", optional=True) }}
+          <datalist id="colorlist">{% for c in colors %}<option value="{{ c }}">{% endfor %}</datalist>
+          {{ f.choices("condition", "Condition", "condition", conditions, checked=sel_conditions, optional=True) }}
+          {{ f.choices("grid_mode", "Grid reference", "grid_mode", [("utm", "UTM"), ("latlon", "Lat / Lon")], checked=[form.grid_mode or 'utm'], kind="radio", optional=True) }}
+          <div class="f-wide f-gridrow" id="utmrow">
+            {{ f.select("utm_zone", "Zone", "utm_zone", [("36", "36"), ("37", "37")], selected=(form.utm_zone or "36")) }}
+            {{ f.input("utm_e", "Easting", "utm_e", value=form.utm_e, placeholder="731351", mono=True, inputmode="decimal", rules="number range:100000,900000 pair:utm_n") }}
+            {{ f.input("utm_n", "Northing", "utm_n", value=form.utm_n, placeholder="3753199", mono=True, inputmode="decimal", rules="number range:0,10000000 pair:utm_e") }}
           </div>
-          <div class="field">
-            <label for="date">Date</label>
-            <input type="text" id="date" name="date" placeholder="2026-03-04"
-                   value="{{ form.date or '' }}">
+          <div class="f-wide f-gridrow" id="llrow" style="display:none">
+            {{ f.input("lat", "Latitude", "lat", value=form.lat, placeholder="33.2700", mono=True, inputmode="decimal", rules="number range:-90,90 pair:lon") }}
+            {{ f.input("lon", "Longitude", "lon", value=form.lon, placeholder="35.2000", mono=True, inputmode="decimal", rules="number range:-180,180 pair:lat") }}
           </div>
-        </div>
-        <div class="row">
-          <div class="field">
-            <label for="caza">Caza (district)</label>
-            <select id="caza" name="caza">
-              <option value="">&mdash; select caza &mdash;</option>
-              {% for cz in cazas %}<option value="{{ cz }}"{{ ' selected' if form.caza == cz else '' }}>{{ cz }}</option>{% endfor %}
-            </select>
-            <div class="hint">Sets where this report lands on the map.</div>
-          </div>
-          <div class="field">
-            <label for="street">Street / exact place</label>
-            <input type="text" id="street" name="street"
-                   placeholder="Route Copper, near junction" value="{{ form.street or '' }}">
-          </div>
-        </div>
-        <div class="row">
-          <div class="field">
-            <label for="munition">Munition / device type</label>
-            <select id="munition" name="munition">
-              <option value="">&mdash; select type &mdash;</option>
-              {% for k, l, c in munitions %}<option value="{{ k }}"{{ ' selected' if form.munition == k else '' }}>{{ l }}</option>{% endfor %}
-            </select>
-            <div class="hint">Colours the pin on the map.</div>
-          </div>
-          <div class="field">
-            <label for="item_color">Item colour / markings</label>
-            <input type="text" id="item_color" name="item_color" list="colorlist"
-                   placeholder="olive, rust, unpainted&hellip;" value="{{ form.item_color or '' }}">
-            <datalist id="colorlist">{% for c in colors %}<option value="{{ c }}">{% endfor %}</datalist>
-          </div>
-        </div>
-        <div class="field">
-          <label>Condition <span style="font-weight:400;color:var(--weak)">(tick all that apply)</span></label>
-          <div class="checks">
-            {% for cnd in conditions %}
-            <label class="chk"><input type="checkbox" name="condition" value="{{ cnd }}"{{ ' checked' if cnd in sel_conditions else '' }}> {{ cnd }}</label>
-            {% endfor %}
-          </div>
-        </div>
-        <div class="field">
-          <label>Grid reference <span style="font-weight:400;color:var(--weak)">(optional &mdash; drops a precise pin inside the caza)</span></label>
-          <div class="gridmode">
-            <label class="chk"><input type="radio" name="grid_mode" value="utm"{{ ' checked' if (form.grid_mode or 'utm') == 'utm' else '' }}> UTM</label>
-            <label class="chk"><input type="radio" name="grid_mode" value="latlon"{{ ' checked' if form.grid_mode == 'latlon' else '' }}> Lat / Lon</label>
-          </div>
-          <div class="row gridrow" id="utmrow">
-            <div style="flex:0 0 92px">
-              <label for="utm_zone" class="mini">Zone</label>
-              <select id="utm_zone" name="utm_zone">
-                <option value="36"{{ ' selected' if form.utm_zone != '37' else '' }}>36N</option>
-                <option value="37"{{ ' selected' if form.utm_zone == '37' else '' }}>37N</option>
-              </select>
+          <div class="f-wide">
+            <div class="f-field">
+              {{ f.label("photo_file", "Photo", "photo_file", optional=True) }}
+              <input class="f-input" type="file" id="photo_file" name="photo_file" accept="image/*" aria-describedby="e-photo_file">
+              <div class="f-error" id="e-photo_file" aria-live="polite"></div>
             </div>
-            <div><label for="utm_e" class="mini">Easting</label>
-              <input type="text" id="utm_e" name="utm_e" class="mono" inputmode="decimal" placeholder="731351" value="{{ form.utm_e or '' }}"></div>
-            <div><label for="utm_n" class="mini">Northing</label>
-              <input type="text" id="utm_n" name="utm_n" class="mono" inputmode="decimal" placeholder="3753199" value="{{ form.utm_n or '' }}"></div>
           </div>
-          <div class="row gridrow" id="llrow" style="display:none">
-            <div><label for="lat" class="mini">Latitude</label>
-              <input type="text" id="lat" name="lat" class="mono" inputmode="decimal" placeholder="33.8938" value="{{ form.lat or '' }}"></div>
-            <div><label for="lon" class="mini">Longitude</label>
-              <input type="text" id="lon" name="lon" class="mono" inputmode="decimal" placeholder="35.5018" value="{{ form.lon or '' }}"></div>
-          </div>
-          <div class="hint">Lebanon spans UTM <span class="mono">36N</span> (coast &amp; most of the country) and <span class="mono">37N</span> (eastern Beqaa / Baalbek-Hermel). Leave blank to pin at the caza centre.</div>
+        {% endcall %}
+        <div class="f-actions">
+          <button class="f-btn" type="submit" name="action" value="analyse" data-busy-text="Analysing…">Analyse</button>
+          <button class="f-btn ghost" type="submit" name="action" value="save" data-busy-text="Saving…">Save to database</button>
+          {{ f.toggle("use_ai", "AI assessment", "use_ai", checked=status.ai_ok, disabled=not status.ai_ok,
+                      note=('' if status.ai_ok else 'Off: ' ~ status.ai_reason)) }}
         </div>
-        <div class="field">
-          <label for="narrative">Report narrative</label>
-          <textarea id="narrative" name="narrative"
-            placeholder="Paste the incident report here. Sirens reads the free text and pulls out the device signature, names, groups and numbers.">{{ form.narrative or '' }}</textarea>
-          <div class="hint">Free text is fine — messy field reporting is what it's built for.</div>
-        </div>
-        <div class="field">
-          <label for="photo_file">Photo <span style="font-weight:400;color:var(--weak)">(optional &mdash; filed &amp; shown for comparison, not analysed)</span></label>
-          <input type="file" id="photo_file" name="photo_file" accept="image/*">
-          <div class="hint">JPG, PNG, WEBP or GIF, up to 8&nbsp;MB. Filed under the <strong>location</strong> it was found (e.g. <span class="mono">route-copper-03.jpg</span>) and shown beside any incident it links to. Saved with the record on <strong>Save to database</strong>.</div>
-        </div>
-        <div class="actions">
-          <button class="btn" type="submit" name="action" value="analyse">Analyse</button>
-          <button class="btn ghost" type="submit" name="action" value="save">Save to database</button>
-          <label class="toggle {{ '' if status.ai_ok else 'disabled' }}">
-            <input type="checkbox" name="use_ai" {{ 'checked' if status.ai_ok else 'disabled' }}>
-            AI assessment
-          </label>
-        </div>
-        {% if not status.ai_ok %}
-          <div class="hint">AI assessment is off — {{ status.ai_reason }}</div>
-        {% endif %}
       </form>
     </div>
   </section>
@@ -779,12 +727,9 @@ import math
 
 REGIONS_FILE = ROOT / "data" / "regions.json"
 
-_HEAT = ["#eceeec", "#ede4d2", "#dfc9a0", "#c99b5f", "#a86b38"]      # cold -> hot, muted
-_HEAT_INK = ["#9aa1a8", "#8a7048", "#7a5c38", "#5f4326", "#e8e2d6"]  # text per level, softer
 # --- Report attributes -----------------------------------------------------
-# Caza fill shows *concentration* (the heat ramp above). Individual reports
-# drop a coloured pin inside their caza, coloured by *munition type* — so the
-# two never fight over one fill. (key, human label, pin colour).
+# Each report is a marker on the map, coloured by *munition type*.
+# (key, human label, marker colour).
 _MUNITIONS = [
     ("ied",       "IED / roadside device", "#c0663f"),
     ("vbied",     "VBIED (vehicle-borne)",  "#7a3a3a"),
@@ -984,19 +929,6 @@ def _form_options(f):
                 colors=_ITEM_COLORS, conditions=_CONDITIONS, sel_conditions=sel)
 
 
-def _pin_xy(lat, lon, centroid, idx):
-    """Pixel for a report's pin: its exact lon/lat if known, else a capped
-    golden-angle spiral around the caza centre so many pins fan out but
-    stay contained near the city instead of drifting off the map."""
-    if lat is not None and lon is not None and _PROJ:
-        return _PROJ(lon, lat)
-    cx, cy = centroid
-    if idx <= 0:
-        return cx, cy
-    ang = idx * 2.399963229728653          # golden angle (radians)
-    rad = min(3.0 + 2.2 * math.sqrt(idx), 14.0)   # capped radius
-    return cx + rad * math.cos(ang), cy + rad * math.sin(ang)
-
 # Map the sample data's invented locations onto real Lebanese cazas so the
 # choropleth has a spread to show. Delete/replace these as you enter real ones.
 _LOCATION_ALIASES = {
@@ -1058,78 +990,7 @@ def _load_regions():
 _REGIONS = _load_regions()
 
 
-def _rings(geom):
-    """Yield every ring (exterior + holes) of a Polygon/MultiPolygon."""
-    t = geom["type"]
-    c = geom["coordinates"]
-    if t == "Polygon":
-        for ring in c:
-            yield ring
-    elif t == "MultiPolygon":
-        for poly in c:
-            for ring in poly:
-                yield ring
-
-
-def _make_projector(fc, width=560, pad=12):
-    """Linear lon/lat -> pixel transform sized to the data's bounding box.
-
-    Longitude is compressed by cos(mid-latitude) so the country isn't stretched,
-    and the y-axis is flipped so north points up.
-    """
-    xs = []
-    ys = []
-    for f in fc["features"]:
-        for ring in _rings(f["geometry"]):
-            for lon, lat in ring:
-                xs.append(lon)
-                ys.append(lat)
-    minx, maxx = min(xs), max(xs)
-    miny, maxy = min(ys), max(ys)
-    kx = math.cos(math.radians((miny + maxy) / 2))
-    gw = (maxx - minx) * kx
-    gh = (maxy - miny)
-    height = (width - 2 * pad) * gh / gw + 2 * pad
-    sx = (width - 2 * pad) / gw
-    sy = (height - 2 * pad) / gh
-
-    def proj(lon, lat):
-        return (pad + (lon - minx) * kx * sx,
-                pad + (maxy - lat) * sy)
-
-    params = {"minx": minx, "maxx": maxx, "miny": miny, "maxy": maxy,
-              "kx": kx, "sx": sx, "sy": sy, "pad": pad}
-    return proj, width, height, params
-
-
-if _REGIONS:
-    _PROJ, _MAP_W, _MAP_H, _PROJ_PARAMS = _make_projector(_REGIONS, width=900)
-    _CAZA_NAMES = sorted({f["properties"]["name"] for f in _REGIONS["features"]})
-else:
-    _PROJ = _MAP_W = _MAP_H = _PROJ_PARAMS = None
-    _CAZA_NAMES = []
-
-
-def _path_d(geom):
-    """SVG path data for a projected Polygon/MultiPolygon (holes included)."""
-    out = []
-    for ring in _rings(geom):
-        pts = [_PROJ(lon, lat) for lon, lat in ring]
-        out.append("M" + " ".join(f"{x:.1f},{y:.1f}" for x, y in pts) + "Z")
-    return "".join(out)
-
-
-def _centroid(geom):
-    """Rough label anchor: mean of the largest ring's projected points."""
-    best = None
-    bestlen = -1
-    for ring in _rings(geom):
-        if len(ring) > bestlen:
-            bestlen = len(ring)
-            best = ring
-    xs = [_PROJ(lon, lat)[0] for lon, lat in best]
-    ys = [_PROJ(lon, lat)[1] for lon, lat in best]
-    return sum(xs) / len(xs), sum(ys) / len(ys)
+_CAZA_NAMES = sorted({f["properties"]["name"] for f in _REGIONS["features"]}) if _REGIONS else []
 
 
 def _district(location):
@@ -1138,13 +999,6 @@ def _district(location):
         return None
     primary = location.split(",")[0].strip()
     return _LOCATION_ALIASES.get(primary, primary)
-
-
-def _heat_level(count, hi):
-    """Bucket a count into 0..4 for the heat ramp (0 only when count is 0)."""
-    if count <= 0 or hi <= 0:
-        return 0
-    return 1 + min(3, int((count - 1) * 4 / max(hi, 1)))
 
 
 @app.route("/tree")
@@ -1173,438 +1027,46 @@ def link_tree():
 
 @app.route("/map")
 def incident_map():
-    if not _REGIONS:
-        return render_template_string(MAP_TEMPLATE, ready=False)
-
-    # Canonical caza name per normalised key, for tolerant matching.
-    canon = {}
-    for f in _REGIONS["features"]:
-        canon.setdefault(_norm(f["properties"]["name"]), f["properties"]["name"])
-
-    # Label anchor / pin-fallback centre per caza (its largest piece).
-    cazapos = {}
-    for f in _REGIONS["features"]:
-        name = f["properties"]["name"]
-        cx, cy = _centroid(f["geometry"])
-        span = max(len(r) for r in _rings(f["geometry"]))
-        if name not in cazapos or span > cazapos[name]["span"]:
-            cazapos[name] = {"x": cx, "y": cy, "span": span}
-
+    """Offline street map (map_bp.py). This only gathers the incident markers:
+    an exact point when a grid was filed, otherwise the caza centre, spread so
+    markers placed at the same caza do not overlap."""
+    canon = {_norm(n): n for n in _CAZA_NAMES}
+    centres = map_bp.caza_centres()
     meta = _load_meta()
-    counts = {}
-    reports = {}            # caza -> [ report dicts ]  for the click popup
-    pins = []               # one coloured dot per report, on top of the map
-    typecounts = {}
-    percaza_idx = {}
-    unmatched = 0
+    incidents, typecounts, percaza, unplaced = [], {}, {}, 0
     for inc in store.all_incidents():
-        iid = getattr(inc, "incident_id", "")
+        iid = inc.incident_id
         m = meta.get(iid, {})
-        # Caza comes from the filed metadata first, then the old location alias.
-        d = m.get("caza") or _district(getattr(inc, "location", None))
+        d = m.get("caza") or _district(inc.location)
         key = canon.get(_norm(d)) if d else None
-        if not key:
-            unmatched += 1
-            continue
-        counts[key] = counts.get(key, 0) + 1
-        mun = _infer_munition(inc, m.get("munition"))
-        typecounts[mun] = typecounts.get(mun, 0) + 1
-
         lat, lon = m.get("lat"), m.get("lon")
         exact = lat is not None and lon is not None
-        idx = percaza_idx.get(key, 0)
-        percaza_idx[key] = idx + 1
-        centre = (cazapos[key]["x"], cazapos[key]["y"])
-        px, py = _pin_xy(lat, lon, centre, 0 if exact else idx)
-
-        snip = (getattr(inc, "narrative", "") or "").strip().replace("\n", " ")
-        grid = m.get("grid") or (_fmt_grid(lat, lon) if exact else "")
-        reports.setdefault(key, []).append({
-            "id": iid,
-            "date": getattr(inc, "date", "") or "",
-            "loc": getattr(inc, "location", "") or "",
-            "street": m.get("street", "") or "",
-            "type": mun,
-            "typelabel": _MUNITION_LABEL.get(mun, mun),
-            "color": m.get("color", "") or "",
-            "condition": m.get("condition", []) or [],
-            "grid": grid,
-            "exact": exact,
-            "snip": snip[:140] + ("…" if len(snip) > 140 else ""),
+        if exact:
+            mgrs_ref = to_mgrs(lat, lon)
+        else:
+            if key not in centres:
+                unplaced += 1
+                continue
+            idx = percaza.get(key, 0)
+            percaza[key] = idx + 1
+            # the reference names the caza centre, not the display-spread marker
+            mgrs_ref = to_mgrs(centres[key][1], centres[key][0])
+            lon, lat = map_bp.spread(*centres[key], idx)
+        mun = _infer_munition(inc, m.get("munition"))
+        typecounts[mun] = typecounts.get(mun, 0) + 1
+        snip = (inc.narrative or "").strip().replace("\n", " ")
+        incidents.append({
+            "id": iid, "lon": round(lon, 6), "lat": round(lat, 6), "exact": exact,
+            "caza": key or "", "date": inc.date or "", "loc": inc.location or "",
+            "street": m.get("street", "") or "", "type": mun,
+            "typelabel": _MUNITION_LABEL.get(mun, mun), "fill": _MUNITION_COLOR.get(mun, "#8a929a"),
+            "item_color": m.get("color", "") or "", "condition": m.get("condition", []) or [],
+            "grid": m.get("grid") or (_fmt_grid(lat, lon) if exact else ""), "mgrs": mgrs_ref,
+            "snip": snip[:160] + ("…" if len(snip) > 160 else ""),
         })
-        pins.append({"x": round(px, 1), "y": round(py, 1), "type": mun,
-                     "fill": _MUNITION_COLOR.get(mun, "#8a929a"),
-                     "caza": key, "id": iid, "exact": exact})
-    hi = max(counts.values()) if counts else 0
-
-    # One filled path per feature; multi-part cazas share a name and fill.
-    shapes = []
-    for f in _REGIONS["features"]:
-        name = f["properties"]["name"]
-        c = counts.get(name, 0)
-        shapes.append({"d": _path_d(f["geometry"]), "fill": _HEAT[_heat_level(c, hi)],
-                       "name": name, "count": c})
-
-    labels = []
-    for name, pos in cazapos.items():
-        c = counts.get(name, 0)
-        labels.append({"x": pos["x"], "y": pos["y"], "name": name,
-                       "count": c, "ink": _HEAT_INK[_heat_level(c, hi)] if c else "#9aa1a8"})
-
-    ranked = sorted(counts.items(), key=lambda t: -t[1])
-    legend_types = [{"key": k, "label": l, "color": c, "count": typecounts.get(k, 0)}
-                    for k, l, c in _MUNITIONS if typecounts.get(k, 0) > 0]
-    return render_template_string(
-        MAP_TEMPLATE, ready=True, shapes=shapes, labels=labels, pins=pins,
-        w=_MAP_W, h=_MAP_H, heat=_HEAT, ranked=ranked, reports=reports,
-        legend_types=legend_types, proj=(_PROJ_PARAMS or {}),
-        total=sum(counts.values()), districts=len(counts), unmatched=unmatched)
-
-
-MAP_TEMPLATE = r"""<!doctype html>
-<html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Sirens — Incident Map</title>
-<style>
-  :root{--ink:#16202b;--soft:#3a4652;--line:#e2e6e3;--surface:#f4f6f3;
-    --sig:#a8703a; --sig-soft:#f0e6d4;
-    --mono:ui-monospace,Menlo,Consolas,monospace;
-    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;}
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--surface);color:var(--ink);font-family:var(--sans);line-height:1.5}
-  .bar{display:flex;align-items:center;gap:18px;padding:14px 26px;background:var(--ink);
-    color:#eef2f5;border-bottom:3px solid var(--sig)}
-  .brand{font-family:var(--mono);font-weight:600;letter-spacing:.16em;text-transform:uppercase;font-size:15px}
-  .brand small{display:block;letter-spacing:.06em;font-size:10px;color:#9fb0bd;font-weight:400;margin-top:2px}
-  .bar a{margin-left:auto;color:#cdd8e0;font-family:var(--mono);font-size:12px;
-    text-decoration:none;border:1px solid #2c3c4a;padding:6px 12px;border-radius:3px}
-  .bar a:hover{background:#22303d}
-  .wrap{max-width:1080px;margin:0 auto;padding:26px 22px 60px}
-  h1{font-size:14px;letter-spacing:.14em;text-transform:uppercase;color:var(--soft);
-    font-family:var(--mono);margin:0 0 4px}
-  .sub{color:var(--weak);font-size:13px;margin:0 0 18px}
-  .layout{display:grid;grid-template-columns:minmax(0,1fr) 250px;gap:24px;align-items:start}
-  @media(max-width:820px){.layout{grid-template-columns:1fr}}
-  .mapcard{position:relative;background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px;user-select:none;-webkit-user-select:none}  svg{width:100%;height:auto;display:block;touch-action:none;cursor:grab}
-  svg.grabbing{cursor:grabbing}
-  .region{stroke:#c7cdc9;stroke-width:.6;cursor:pointer}
-  .region.hot{stroke:#16202b;stroke-width:1.1}
-  .region.sel{stroke:#16202b;stroke-width:1.4}
-  .region.dim{opacity:.35}
-  .rlabel{font-family:var(--mono);pointer-events:none;paint-order:stroke;
-    stroke:#fff;stroke-width:2.4px;stroke-linejoin:round}
-  .rlabel.dim{opacity:.18}
-  .rlabel.zero{opacity:.5}
-  .pin{stroke:#fff;stroke-width:1;cursor:pointer}
-  .pin.hollow{fill-opacity:.45;stroke-dasharray:2 1.4}
-  .pin.off{display:none}
-  .pin.notcaza{opacity:.15;pointer-events:none}
-  .zoom{position:absolute;top:18px;right:18px;display:flex;flex-direction:column;gap:6px;z-index:4}
-  .zoom button{width:32px;height:32px;border:1px solid var(--line);background:#fff;border-radius:6px;
-    font-size:17px;font-family:var(--mono);color:var(--ink);cursor:pointer;line-height:1;padding:0}
-  .zoom button:hover{background:#f1f3f0}
-  .tip{position:absolute;pointer-events:none;background:#16202b;color:#eef2f5;font-family:var(--mono);
-    font-size:12px;padding:5px 9px;border-radius:4px;white-space:nowrap;opacity:0;transform:translate(-50%,-135%);
-    transition:opacity .1s;z-index:5}
-  .tip b{color:#fff}.tip .c{color:#e3a95f}
-  .readout{position:absolute;left:12px;bottom:12px;background:rgba(22,32,43,.9);color:#eef2f5;
-    font-family:var(--mono);font-size:11px;padding:5px 9px;border-radius:4px;opacity:0;
-    transition:opacity .12s;pointer-events:none;z-index:5;white-space:nowrap}
-  .readout b{color:#e3a95f}
-  /* on-map popup */
-  .popup{position:absolute;top:14px;left:14px;width:288px;max-height:calc(100% - 28px);overflow:auto;
-    background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 26px rgba(20,32,43,.18);
-    padding:12px 13px;display:none;z-index:6}
-  .popup.on{display:block}
-  .pophead{display:flex;align-items:center;gap:8px}
-  .pophead .nm{font-family:var(--mono);font-weight:700;font-size:14px}
-  .pophead .cnt{font-family:var(--mono);font-size:11px;color:var(--sig)}
-  .pophead .x{margin-left:auto;border:none;background:none;font-size:20px;line-height:1;cursor:pointer;color:var(--weak);padding:0 2px}
-  .pophead .x:hover{color:var(--ink)}
-  .poptypes{display:flex;flex-wrap:wrap;gap:5px;margin:9px 0 4px}
-  .tsum{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:11px;
-    color:var(--soft);background:#f4f6f3;border:1px solid var(--line);border-radius:3px;padding:2px 6px}
-  .tsum i{width:8px;height:8px;border-radius:50%;display:inline-block}
-  .rep{border:1px solid var(--line);border-left:3px solid var(--sig);border-radius:5px;
-    padding:8px 10px;margin-bottom:8px;background:#fffdf9}
-  .rep .rline{display:flex;align-items:baseline;gap:8px}
-  .rep .rid{font-family:var(--mono);font-weight:700;font-size:12.5px}
-  .rep .date{color:var(--weak);font-size:11.5px;margin-left:auto;font-family:var(--mono)}
-  .rep .rtype{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--soft);margin:3px 0}
-  .rep .rtype i{width:9px;height:9px;border-radius:50%;display:inline-block}
-  .rep .where{font-size:12.5px;color:var(--sig);margin:2px 0 3px}
-  .rep .tags{display:flex;flex-wrap:wrap;gap:4px;margin:3px 0}
-  .rep .tag{font-family:var(--mono);font-size:10.5px;padding:1px 6px;border-radius:3px;
-    background:#eef1f0;color:var(--soft);border:1px solid var(--line)}
-  .rep .tag.grid{background:#e9eef4;color:#274a6e;border-color:#cdd9e6}
-  .rep .snip{font-size:12px;color:var(--soft);margin-top:3px}
-  .side h2{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--weak);
-    font-family:var(--mono);margin:2px 0 10px}
-  .rank{display:flex;align-items:center;gap:9px;padding:6px 0;border-bottom:1px solid #eef0ee;font-size:13px;cursor:pointer}
-  .rank:hover{color:var(--link)}
-  .rank .n{font-family:var(--mono);font-weight:700;min-width:20px;text-align:right}
-  .rank .bar2{flex:1;height:8px;background:#eef1f0;border-radius:4px;overflow:hidden}
-  .rank .fill{display:block;height:100%;background:var(--sig)}
-  .legwrap{margin:14px 0 0}
-  .leglab{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--weak);
-    font-family:var(--mono);margin:0 0 6px}
-  .legend{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--weak);font-family:var(--mono)}
-  .legend i{width:22px;height:12px;border-radius:2px;display:inline-block;border:1px solid var(--line)}
-  .tlegend{display:flex;flex-wrap:wrap;gap:6px}
-  .tchip{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;
-    color:var(--soft);background:#fff;border:1px solid var(--line);border-radius:4px;
-    padding:3px 8px;cursor:pointer;user-select:none}
-  .tchip i{width:9px;height:9px;border-radius:50%;display:inline-block}
-  .tchip .tc{color:var(--weak)}
-  .tchip.off{opacity:.4;background:#f4f6f3}
-  .tchip.off i{filter:grayscale(1)}
-  .totals{margin-top:10px;color:var(--weak);font-size:12px}
-  .empty{color:var(--weak);font-size:14px}
-</style></head><body>
-<div class="bar"><div class="brand">Sirens<small>Incident Map — Lebanon by caza</small></div>
-  {{ sirens_menu('map') }}</div>
-<div class="wrap">
-{% if not ready %}
-  <h1>Incident map</h1>
-  <p class="empty">Boundary file not found. Put <span class="mono">regions.json</span> in the <span class="mono">data/</span> folder and reload this page.</p>
-{% else %}
-  <h1>Incident spread &mdash; Lebanon</h1>
-  <p class="sub">Caza fill shows concentration; each coloured pin is one report, by munition type. Scroll to zoom, drag to pan, hover for the grid read-out, click a caza (or pin) for its reports.</p>
-  <div class="layout">
-    <div class="mapcard">
-      <div class="zoom">
-        <button id="zin" title="Zoom in">+</button>
-        <button id="zout" title="Zoom out">&minus;</button>
-        <button id="zreset" title="Reset view">&#8634;</button>
-      </div>
-      <div class="tip" id="tip"></div>
-      <div class="readout" id="readout"></div>
-      <div class="popup" id="popup">
-        <div class="pophead"><span class="nm" id="popname"></span><span class="cnt" id="popcnt"></span>
-          <button class="x" id="popx" title="Close">&times;</button></div>
-        <div class="poptypes" id="poptypes"></div>
-        <div id="popbody"></div>
-      </div>
-      <svg id="lbmap" viewBox="0 0 {{ w|round|int }} {{ h|round|int }}" role="img" aria-label="Choropleth of Lebanon shaded by incident count per caza, with a coloured pin per report by munition type">
-        <g id="vp">
-          {% for s in shapes %}<path class="region" data-name="{{ s.name }}" data-count="{{ s.count }}" d="{{ s.d }}" fill="{{ s.fill }}"></path>{% endfor %}
-          {% for l in labels %}<text class="rlabel{{ ' zero' if not l.count }}" data-name="{{ l.name }}" x="{{ l.x|round(1) }}" y="{{ l.y|round(1) }}" font-size="{{ '9' if l.count else '5.5' }}" font-weight="{{ '700' if l.count else '400' }}" text-anchor="middle" fill="{{ l.ink }}">{{ l.name }}{% if l.count %} &#183; {{ l.count }}{% endif %}</text>{% endfor %}
-          {% for p in pins %}<circle class="pin{{ ' hollow' if not p.exact else '' }}" data-type="{{ p.type }}" data-caza="{{ p.caza }}" data-id="{{ p.id }}" cx="{{ p.x }}" cy="{{ p.y }}" r="3.1" fill="{{ p.fill }}"></circle>{% endfor %}
-        </g>
-      </svg>
-      <div class="legwrap">
-        <div class="leglab">Concentration (caza fill)</div>
-        <div class="legend"><span>none</span>{% for c in heat %}<i style="background:{{ c }}"></i>{% endfor %}<span>hotspot</span></div>
-      </div>
-      {% if legend_types %}
-      <div class="legwrap">
-        <div class="leglab">Munition type (pins) &mdash; click to filter</div>
-        <div class="tlegend" id="tlegend">
-          {% for t in legend_types %}<span class="tchip" data-type="{{ t.key }}"><i style="background:{{ t.color }}"></i>{{ t.label }} <span class="tc">{{ t.count }}</span></span>{% endfor %}
-        </div>
-      </div>
-      {% endif %}
-    </div>
-    <div class="side">
-      <h2>Hotspots</h2>
-      {% if ranked %}
-        {% set top = ranked[0][1] %}
-        {% for name, c in ranked %}
-        <div class="rank" data-jump="{{ name }}"><span class="n">{{ c }}</span>
-          <span class="bar2"><span class="fill" style="width:{{ (c * 100 // top) }}%"></span></span>
-          <span>{{ name }}</span></div>
-        {% endfor %}
-      {% else %}<p class="empty">No incidents matched a caza yet.</p>{% endif %}
-      <p class="totals">{{ total }} incident{{ '' if total == 1 else 's' }} across {{ districts }} caza{{ '' if districts == 1 else 's' }}{% if unmatched %} &#183; {{ unmatched }} unmatched{% endif %}.</p>
-    </div>
-  </div>
-  <script id="rdata" type="application/json">{{ reports|tojson }}</script>
-  <script id="tdata" type="application/json">{{ legend_types|tojson }}</script>
-  <script id="pdata" type="application/json">{{ proj|tojson }}</script>
-  <script>
-  (function(){
-    var svg=document.getElementById('lbmap'), vp=document.getElementById('vp'),
-        tip=document.getElementById('tip'), card=svg.parentNode,
-        readout=document.getElementById('readout'),
-        popup=document.getElementById('popup'), popname=document.getElementById('popname'),
-        popcnt=document.getElementById('popcnt'), poptypes=document.getElementById('poptypes'),
-        popbody=document.getElementById('popbody'),
-        regions=[].slice.call(document.querySelectorAll('.region')),
-        labels=[].slice.call(document.querySelectorAll('.rlabel')),
-        pinEls=[].slice.call(document.querySelectorAll('.pin')),
-        data=JSON.parse(document.getElementById('rdata').textContent),
-        tinfo=JSON.parse(document.getElementById('tdata').textContent),
-        PJ=JSON.parse(document.getElementById('pdata').textContent),
-        vb=svg.viewBox.baseVal, W=vb.width, H=vb.height,
-        scale=1, tx=0, ty=0, selected=null, active={};
-
-    var TCOL={}, TLAB={};
-    tinfo.forEach(function(t){ TCOL[t.key]=t.color; TLAB[t.key]=t.label; active[t.key]=true; });
-
-    function apply(){ vp.setAttribute('transform','translate('+tx+' '+ty+') scale('+scale+')'); }
-    function clampPan(){ tx=Math.min(0,Math.max(W-W*scale,tx)); ty=Math.min(0,Math.max(H-H*scale,ty)); }
-    function zoomAt(mx,my,f){ var ns=Math.min(14,Math.max(1,scale*f));
-      tx=mx-(mx-tx)*(ns/scale); ty=my-(my-ty)*(ns/scale); scale=ns; clampPan(); apply(); }
-    function toUser(e){ var r=svg.getBoundingClientRect();
-      return [(e.clientX-r.left)/r.width*W,(e.clientY-r.top)/r.height*H]; }
-
-    // lat/lon -> UTM (WGS84), zone auto from longitude. Mirrors the server math.
-    function llToUtm(lat,lon){
-      var a=6378137.0,f=1/298.257223563,k0=0.9996,e2=f*(2-f),ep2=e2/(1-e2);
-      var zone=Math.floor((lon+180)/6)+1, lon0=((zone-1)*6-180+3)*Math.PI/180;
-      var la=lat*Math.PI/180, lo=lon*Math.PI/180;
-      var N=a/Math.sqrt(1-e2*Math.pow(Math.sin(la),2)),
-          T=Math.pow(Math.tan(la),2), C=ep2*Math.pow(Math.cos(la),2),
-          A=Math.cos(la)*(lo-lon0);
-      var M=a*((1-e2/4-3*e2*e2/64-5*e2*e2*e2/256)*la
-        -(3*e2/8+3*e2*e2/32+45*e2*e2*e2/1024)*Math.sin(2*la)
-        +(15*e2*e2/256+45*e2*e2*e2/1024)*Math.sin(4*la)
-        -(35*e2*e2*e2/3072)*Math.sin(6*la));
-      var E=k0*N*(A+(1-T+C)*Math.pow(A,3)/6+(5-18*T+T*T+72*C-58*ep2)*Math.pow(A,5)/120)+500000;
-      var Nn=k0*(M+N*Math.tan(la)*(A*A/2+(5-T+9*C+4*C*C)*Math.pow(A,4)/24
-        +(61-58*T+T*T+600*C-330*ep2)*Math.pow(A,6)/720));
-      return {zone:zone,e:E,n:Nn};
-    }
-    function readAt(e){
-      if(PJ.sx===undefined) return;
-      var u=toUser(e), bx=(u[0]-tx)/scale, by=(u[1]-ty)/scale;
-      var lon=PJ.minx+(bx-PJ.pad)/(PJ.kx*PJ.sx);
-      var lat=PJ.maxy-(by-PJ.pad)/PJ.sy;
-      var g=llToUtm(lat,lon);
-      readout.innerHTML='<b>'+g.zone+'N</b> '+Math.round(g.e)+'E '+Math.round(g.n)+
-        'N &nbsp;&#183;&nbsp; '+lat.toFixed(4)+', '+lon.toFixed(4);
-      readout.style.opacity='1';
-    }
-
-    svg.addEventListener('wheel',function(e){ e.preventDefault(); var p=toUser(e);
-      zoomAt(p[0],p[1], e.deltaY<0?1.15:1/1.15); readAt(e); },{passive:false});
-    svg.addEventListener('pointermove',readAt);
-    svg.addEventListener('pointerleave',function(){ readout.style.opacity='0'; });
-
-    // Pan: only capture the pointer AFTER a real drag begins, so a plain click
-    // still reaches a district's (or pin's) click handler.
-    var pressing=false, moved=false, lx, ly, captured=false, pid=null;
-    svg.addEventListener('pointerdown',function(e){ pressing=true; moved=false; lx=e.clientX; ly=e.clientY; pid=e.pointerId; });
-    svg.addEventListener('pointermove',function(e){
-      if(!pressing) return;
-      if(!moved && Math.abs(e.clientX-lx)+Math.abs(e.clientY-ly)>3){
-        moved=true; svg.classList.add('grabbing');
-        try{ svg.setPointerCapture(pid); captured=true; }catch(_){}
-      }
-      if(moved){ var r=svg.getBoundingClientRect();
-        tx+=(e.clientX-lx)/r.width*W; ty+=(e.clientY-ly)/r.height*H; lx=e.clientX; ly=e.clientY; clampPan(); apply(); }
-    });
-    function endPress(){ pressing=false; svg.classList.remove('grabbing');
-      if(captured){ try{ svg.releasePointerCapture(pid); }catch(_){} captured=false; } }
-    svg.addEventListener('pointerup', endPress);
-    svg.addEventListener('pointercancel', endPress);
-
-    function bboxOf(name){ var x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
-      regions.forEach(function(p){ if(p.getAttribute('data-name')===name){ var b=p.getBBox();
-        x0=Math.min(x0,b.x); y0=Math.min(y0,b.y); x1=Math.max(x1,b.x+b.width); y1=Math.max(y1,b.y+b.height); } });
-      return {x:x0,y:y0,w:x1-x0,h:y1-y0}; }
-    function zoomTo(name){ var b=bboxOf(name), pad=1.4,
-        ns=Math.min(14,Math.min(W/(b.w*pad),H/(b.h*pad))),
-        cx=b.x+b.w/2, cy=b.y+b.h/2;
-      scale=ns; tx=W/2-cx*ns; ty=H/2-cy*ns; clampPan(); apply(); }
-
-    function esc(s){ var d=document.createElement('div'); d.textContent=s==null?'':s; return d.innerHTML; }
-    function shown(t){ return active[t]!==false; }
-
-    function renderPopup(name){
-      var all=data[name]||[], list=all.filter(function(r){ return shown(r.type); });
-      popname.textContent=name;
-      popcnt.textContent=list.length+' report'+(list.length===1?'':'s')+
-        (list.length!==all.length?(' of '+all.length):'');
-      // type summary chips
-      var by={}; list.forEach(function(r){ by[r.type]=(by[r.type]||0)+1; });
-      var th=''; Object.keys(by).forEach(function(t){
-        th+='<span class="tsum"><i style="background:'+(TCOL[t]||'#8a929a')+'"></i>'+
-            by[t]+' '+esc(TLAB[t]||t)+'</span>'; });
-      poptypes.innerHTML=th;
-      // rows
-      var html=list.length?'':'<p class="empty">No reports match the current filter.</p>';
-      list.forEach(function(r){
-        var col=TCOL[r.type]||'#8a929a';
-        html+='<div class="rep" style="border-left-color:'+col+'">';
-        html+='<div class="rline"><span class="rid">'+esc(r.id)+'</span><span class="date">'+esc(r.date)+'</span></div>';
-        html+='<div class="rtype"><i style="background:'+col+'"></i>'+esc(r.typelabel)+'</div>';
-        html+='<div class="where">'+esc(r.street||r.loc||'location not given')+'</div>';
-        var tags='';
-        if(r.grid) tags+='<span class="tag grid">'+esc(r.grid)+(r.exact?'':' (approx)')+'</span>';
-        if(r.color) tags+='<span class="tag">'+esc(r.color)+'</span>';
-        (r.condition||[]).forEach(function(c){ tags+='<span class="tag">'+esc(c)+'</span>'; });
-        if(tags) html+='<div class="tags">'+tags+'</div>';
-        if(r.snip) html+='<div class="snip">'+esc(r.snip)+'</div>';
-        html+='</div>';
-      });
-      popbody.innerHTML=html;
-    }
-
-    function select(name){
-      selected=name;
-      regions.forEach(function(p){ var m=p.getAttribute('data-name')===name;
-        p.classList.toggle('sel',m); p.classList.toggle('dim',!m); p.classList.remove('hot'); });
-      labels.forEach(function(t){ t.classList.toggle('dim',t.getAttribute('data-name')!==name); });
-      pinEls.forEach(function(c){ c.classList.toggle('notcaza',c.getAttribute('data-caza')!==name); });
-      zoomTo(name);
-      tip.style.opacity='0';
-      renderPopup(name);
-      popup.classList.add('on'); popup.scrollTop=0;
-    }
-    function clearSel(){
-      selected=null;
-      regions.forEach(function(p){ p.classList.remove('sel','dim','hot'); });
-      labels.forEach(function(t){ t.classList.remove('dim'); });
-      pinEls.forEach(function(c){ c.classList.remove('notcaza'); });
-      popup.classList.remove('on');
-      scale=1; tx=0; ty=0; apply();
-    }
-
-    function applyFilter(){
-      pinEls.forEach(function(c){ c.classList.toggle('off',!shown(c.getAttribute('data-type'))); });
-      if(selected) renderPopup(selected);
-    }
-
-    regions.forEach(function(p){
-      var name=p.getAttribute('data-name'), cnt=p.getAttribute('data-count');
-      p.addEventListener('pointerenter',function(){ if(selected)return; p.classList.add('hot');
-        tip.innerHTML='<b>'+esc(name)+'</b> <span class="c">'+cnt+'</span>'; tip.style.opacity='1'; });
-      p.addEventListener('pointermove',function(e){ var r=card.getBoundingClientRect();
-        tip.style.left=(e.clientX-r.left)+'px'; tip.style.top=(e.clientY-r.top)+'px'; });
-      p.addEventListener('pointerleave',function(){ p.classList.remove('hot'); if(!selected) tip.style.opacity='0'; });
-      p.addEventListener('click',function(){ if(moved)return; select(name); });
-    });
-
-    pinEls.forEach(function(c){
-      var t=c.getAttribute('data-type'), id=c.getAttribute('data-id'), cz=c.getAttribute('data-caza');
-      c.addEventListener('pointerenter',function(e){ if(selected && cz!==selected) return;
-        var r=card.getBoundingClientRect();
-        tip.innerHTML='<b>'+esc(id)+'</b> <span class="c">'+esc(TLAB[t]||t)+'</span>';
-        tip.style.left=(e.clientX-r.left)+'px'; tip.style.top=(e.clientY-r.top)+'px'; tip.style.opacity='1'; });
-      c.addEventListener('pointerleave',function(){ if(!selected) tip.style.opacity='0'; });
-      c.addEventListener('click',function(ev){ if(moved)return; ev.stopPropagation(); select(cz); });
-    });
-
-    [].slice.call(document.querySelectorAll('.tchip')).forEach(function(chip){
-      chip.addEventListener('click',function(){
-        var t=chip.getAttribute('data-type');
-        active[t]=(active[t]===false); chip.classList.toggle('off',active[t]===false);
-        applyFilter();
-      });
-    });
-
-    [].slice.call(document.querySelectorAll('.rank')).forEach(function(row){
-      row.addEventListener('click',function(){ select(row.getAttribute('data-jump')); }); });
-    document.getElementById('popx').addEventListener('click',clearSel);
-    document.getElementById('zin').addEventListener('click',function(){ zoomAt(W/2,H/2,1.4); });
-    document.getElementById('zout').addEventListener('click',function(){ zoomAt(W/2,H/2,1/1.4); });
-    document.getElementById('zreset').addEventListener('click',clearSel);
-    apply();
-  })();
-  </script>
-{% endif %}
-</div></body></html>"""
+    legend = [{"key": k, "label": l, "color": c, "count": typecounts[k]}
+              for k, l, c in _MUNITIONS if typecounts.get(k)]
+    return map_bp.render_page(incidents, legend, unplaced=unplaced)
 
 
 def _open():

@@ -137,7 +137,7 @@ def _fragment(a, b):
                                   r=_one_row(a, b), tally=_tally())
 
 
-_CARD = r"""{% macro card(r) %}
+_CARD = r"""{% import "forms_ui.html" as f %}{% macro card(r) %}
 <article class="link{% if r.decision %} is-{{ r.decision }}{% endif %}" id="{{ r.dom_id }}">
   <div class="top">
     <span class="pair mono">{{ r.a }} &harr; {{ r.b }}</span>
@@ -176,11 +176,12 @@ _CARD = r"""{% macro card(r) %}
     {% for n in r.notes %}
     <div class="note"><span class="meta">{{ n.created_at.replace('T', ' ')[:16] }}{% if n.analyst %} &middot; {{ n.analyst }}{% endif %}</span> {{ n.note }}</div>
     {% endfor %}
-    <form hx-post="{{ url_for('review.note') }}" hx-include="#analyst"
+    <form class="f-form f-inline" novalidate hx-post="{{ url_for('review.note') }}" hx-include="#analyst"
           hx-target="#{{ r.dom_id }}" hx-swap="outerHTML">
       <input type="hidden" name="a" value="{{ r.a }}"><input type="hidden" name="b" value="{{ r.b }}">
-      <input type="text" name="note" placeholder="Add a note on this link" maxlength="2000" required>
-      <button type="submit" class="dbtn">Add note</button>
+      {{ f.input("note", "Add a note", "note", id="note-" ~ r.dom_id, placeholder="e.g. dates two months apart",
+                 rules="required", required_msg="Write a note before adding it.", extra='maxlength="2000"') }}
+      <button type="submit" class="f-btn ghost small" data-busy-text="Saving…">Add note</button>
     </form>
   </div>
 </article>
@@ -223,14 +224,6 @@ _PAGE = r"""<!doctype html>
   .stat{font-family:var(--mono);font-size:12.5px;color:var(--ink-soft)}
   .lead{font-size:13.5px;color:var(--ink-soft);background:var(--line-2);border-radius:4px;
         padding:10px 14px;margin:0 0 18px}
-  .tools{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;margin-bottom:22px}
-  .filters a{font-family:var(--mono);font-size:12px;text-decoration:none;color:var(--ink-soft);
-        border:1px solid var(--line);background:#fff;padding:5px 11px;border-radius:3px;margin-right:4px}
-  .filters a.on{background:var(--ink);color:#fff;border-color:var(--ink)}
-  label.an{font-size:12px;color:var(--ink-soft);font-weight:600}
-  input[type=text]{padding:7px 10px;border:1px solid var(--line);border-radius:4px;
-        font-family:var(--sans);font-size:13.5px;background:#fcfdfc;color:var(--ink)}
-  #analyst{width:150px;margin-left:6px}
   .link{background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--line);
         border-radius:7px;padding:16px 20px;margin-bottom:14px;
         box-shadow:0 1px 2px rgba(22,32,43,.04),0 4px 14px rgba(22,32,43,.04)}
@@ -262,13 +255,13 @@ _PAGE = r"""<!doctype html>
   .notes{border-top:1px solid var(--line-2);margin-top:10px;padding-top:10px}
   .note{font-size:13px;margin-bottom:6px}
   .note .meta{font-family:var(--mono);font-size:11px;color:var(--weak);margin-right:6px}
-  .notes form{display:flex;gap:8px;margin-top:6px}
-  .notes input[type=text]{flex:1}
+  .notes form{margin-top:6px}
   .htmx-request{opacity:.6}
   #flash{display:none;background:#fbeceb;border:1px solid #e7b7b2;color:#a4332b;
          padding:9px 13px;border-radius:4px;font-size:13px;margin-bottom:14px}
   .empty{color:var(--weak);padding:20px 2px}
 </style>
+{{ f.assets() }}
 </head>
 <body>
 <div class="bar">
@@ -285,12 +278,17 @@ _PAGE = r"""<!doctype html>
     decision can be undone. Links shown: score {{ '%.2f'|format(0.25) }} or more with shared evidence
     (the same set as the link tree).</p>
   <div id="flash"></div>
-  <div class="tools">
-    <span class="filters">
-      {% for f in filters %}<a href="{{ url_for('review.review_page', show=f) }}" class="{{ 'on' if f == show else '' }}">{{ {'all':'all','open':'no decision','confirm':'confirmed','reject':'rejected','unsure':'unsure'}[f] }}</a>{% endfor %}
-    </span>
-    <label class="an">Analyst initials<input type="text" id="analyst" name="analyst" maxlength="40" placeholder="optional"></label>
-  </div>
+  {% set names = {'all':'all','open':'no decision','confirm':'confirmed','reject':'rejected','unsure':'unsure'} %}
+  <form class="f-form f-filterbar" onsubmit="return false" aria-label="Review filters">
+    <div class="f-field">
+      <div class="f-labelrow"><span class="f-label">Show links</span></div>
+      <nav class="f-seg filters" aria-label="Filter by decision">
+        {% for flt in filters %}<a href="{{ url_for('review.review_page', show=flt) }}" class="{{ 'on' if flt == show else '' }}"{% if flt == show %} aria-current="true"{% endif %}>{{ names[flt] }}</a>{% endfor %}
+      </nav>
+    </div>
+    {{ f.input("analyst", "Analyst initials", "analyst", placeholder="e.g. BE", optional=True, extra='maxlength="40"') }}
+  </form>
+  {{ f.chips([] if show == 'all' else [("Decision: " ~ names[show], url_for('review.review_page'))], url_for('review.review_page')) }}
 
   {% if db_count == 0 %}
     <p class="empty">No incidents on record yet. <a href="{{ url_for('demo.demo_page') }}">Load the demo data</a> first.</p>

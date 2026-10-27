@@ -12,12 +12,13 @@ features and identities produced it.
 ## Quickstart
 
 Needs Python 3.10+ and an internet connection **for the install only**
-(about 50 MB of spaCy language models). After that, Sirens runs offline.
+(about 50 MB of spaCy language models, plus the one-time offline street map,
+see below). After that, Sirens runs offline.
 
 Linux / macOS:
 
 ```bash
-bash setup.sh                 # creates .venv and installs everything
+bash setup.sh                 # creates .venv, installs everything, downloads the street map once
 source .venv/bin/activate
 python app.py                 # web console
 ```
@@ -30,6 +31,7 @@ python -m venv .venv
 pip install -r requirements.txt
 pip install https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl
 pip install https://github.com/explosion/spacy-models/releases/download/en_core_web_md-3.8.0/en_core_web_md-3.8.0-py3-none-any.whl
+bash scripts/map/get_map.sh   # in Git Bash; or download lebanon.pmtiles into data\map\ by hand
 python app.py
 ```
 
@@ -47,7 +49,7 @@ demo data**): it loads 40 invented sample incidents.
 | Analysis ▾ | Dashboard (`/dashboard`) | Statistics and charts over the record |
 | | Review links (`/review`) | Confirm, reject or flag each link |
 | | Link tree (`/tree`) | Graph of linked incidents and networks |
-| | Map (`/map`) | Incidents by caza |
+| | Map (`/map`) | Offline street map of Lebanon, incident markers, MGRS grid |
 | Data ▾ | Load demo data (`/demo`) | 40 fabricated sample incidents |
 | | Offline check (`/vendor-check`) | Proves the page libraries load without internet (open it with Wi-Fi off) |
 
@@ -67,6 +69,35 @@ chart has a "Show table" with the exact numbers.
 **Likely network on save.** When you press **Save to database**, the result
 page shows which candidate network the report falls into, the strongest link
 with its band, and the reasons for each link.
+
+**Forms.** Every form uses the same layout: grouped sections, rarely used
+fields under **More details**, and an **(i)** next to every field that explains
+it (hover, tap or keyboard focus; Escape closes it). Fields are checked as you
+leave them, with the message written beside the box. Text boxes accept Arabic
+and show it right-to-left. The console's place box suggests the places the map
+knows and says when a name is not one of them (it is still saved).
+
+**Offline street map** (**Analysis ▾ → Map**). A street map of Lebanon built
+from OpenStreetMap data (© OpenStreetMap contributors, ODbL), drawn in the
+browser from one local file, `data/map/lebanon.pmtiles`. Everything outside
+Lebanon is greyed out and panning stays on the country; hovering a road shows
+its name and road number. Incident markers are only as precise as the record:
+an exact point when a grid reference was filed, otherwise placed at the caza
+(district) and marked *approx.*
+- The map file is **not in git**. `setup.sh` downloads it once
+  (`scripts/map/get_map.sh`, checked against `data/map/lebanon.pmtiles.sha256`
+  when that file exists). Without it, `/map` says "Offline map not installed —
+  run `bash setup.sh`" and still lists the incidents.
+- To rebuild it from OpenStreetMap data (needs internet and Go):
+  `bash scripts/map/build_map.sh`. It cuts Lebanon (max zoom 15) out of the
+  Protomaps OpenStreetMap build, verifies it and writes the checksum; publish
+  the file as release asset `lebanon.pmtiles` (tag `map-lebanon-v1`).
+- **MGRS** (6-digit, 100 m, e.g. `36S YC 311 527`): grid lines at 100 km /
+  10 km / 1 km depending on zoom, a live reference under the mouse, and a
+  click on the map copies it. Lebanon spans zones **36S** and **37S**, which
+  meet at **36°E** in the Bekaa; the grid jumps at that line, which is correct.
+  Incident popups give an MGRS reference too, marked *approx.* (caza centre)
+  unless a grid was filed.
 
 **Optional local AI.** The AI summary panels use [Ollama](https://ollama.com)
 running on the same machine. Install it, then pull the model named by
@@ -138,7 +169,11 @@ python -m pytest tests/ -q    # all tests should pass
 python -m linker.decisions    # must end with SELF-CHECK PASSED
 ```
 
-Tests use a temporary database; they never touch `data/sirens.db`.
+Tests use a temporary database; they never touch `data/sirens.db`. A few tests
+need the test-only packages in `requirements-dev.txt`
+(`pip install -r requirements-dev.txt`): they build a small **synthetic** map
+file and compare the MGRS code with the independent `mgrs` and `pyproj`
+libraries. Without those packages these tests are skipped.
 
 ## Pre-arrival brief
 

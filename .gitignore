@@ -14,3 +14,7 @@ venv/
 # local operational data: filed incident photos (sensitive) and the app's metadata sidecar
 data/photos/
 data/report_meta.json
+# offline street map (downloaded once by setup.sh; see scripts/map/)
+data/map/*.pmtiles
+data/map/*.part
+.tools/

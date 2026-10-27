@@ -48,7 +48,7 @@ def brief_page():
                                    assessment=assessment, ai_ok=ai_ok, ai_reason=ai_reason)
 
 
-_TEMPLATE = r"""<!doctype html>
+_TEMPLATE = r"""{% import "forms_ui.html" as f %}<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -125,6 +125,7 @@ _TEMPLATE = r"""<!doctype html>
            color:var(--weak);font-family:var(--mono);margin:16px 0 8px}
   .subhead:first-child{margin-top:0}
 </style>
+{{ f.assets() }}
 </head>
 <body>
 <div class="bar">
@@ -132,33 +133,28 @@ _TEMPLATE = r"""<!doctype html>
   {{ sirens_menu('brief') }}
 </div>
 <div class="wrap">
-  {% if error %}<div class="err">{{ error }}</div>{% endif %}
   <div class="grid">
     <section class="card">
       <h2>Query</h2>
       <div class="body">
-        <form method="post" action="/brief">
-          <div class="field">
-            <label for="location">Location</label>
-            <select id="location" name="location">
-              <option value="">&mdash; select a location &mdash;</option>
-              {% for loc in locations %}
-              <option value="{{ loc }}"{{ ' selected' if form.location == loc else '' }}>{{ loc }}</option>
-              {% endfor %}
-            </select>
-            <div class="hint">Matched fuzzily against each report's location and any places
-              picked up by name extraction.</div>
+        <form class="f-form" method="post" action="/brief" novalidate>
+          {{ f.form_error(error, lead='Brief not run.') }}
+          {% call f.section("Place", sub="Sirens retrieves and ranks past reporting recorded at or near this place.") %}
+            {{ f.input("location", "Location", "brief_location", id="location", value=form.location, list="recordplaces",
+                       placeholder="e.g. Yaroun", rules="required place:recordplaces", wide=True,
+                       required_msg="Enter a place to brief on.",
+                       place_msg="This place is not in the record yet; the brief may find no past reporting.") }}
+            <datalist id="recordplaces">{% for loc in locations %}<option value="{{ loc }}">{% endfor %}</datalist>
+          {% endcall %}
+          {% call f.more("More details", open=(form.describe or false), sub="compare with a description") %}
+            {{ f.textarea("describe", "Description to compare with", "brief_describe", value=form.describe, optional=True, rows=4,
+                          placeholder="e.g. small green fin-stabilised rocket, intact, about 1 m") }}
+          {% endcall %}
+          <div class="f-actions">
+            <button class="f-btn" type="submit" data-busy-text="Retrieving…">Get brief</button>
+            {{ f.toggle("use_ai", "AI area summary", "brief_use_ai", checked=form.use_ai, disabled=not ai_ok,
+                        note=('' if ai_ok else 'Off: ' ~ ai_reason)) }}
           </div>
-          <div class="field">
-            <label for="describe">What the responder sees <span style="font-weight:400;color:var(--weak)">(optional)</span></label>
-            <textarea id="describe" name="describe" placeholder="e.g. small green fin-stabilised rocket, intact, nose fuze fitted, about 1 m">{{ form.describe or '' }}</textarea>
-            <div class="hint">Free text. Used only to rank past records by resemblance — never to identify what's in front of the responder.</div>
-          </div>
-          <label class="chk" style="display:flex;align-items:center;gap:7px;font-size:13px;color:var(--ink-soft);font-weight:500;margin-bottom:14px;cursor:pointer">
-            <input type="checkbox" name="use_ai" style="width:16px;height:16px" {{ 'checked' if form.use_ai else '' }} {{ 'disabled' if not ai_ok else '' }}>
-            AI area summary {{ '' if ai_ok else '(' + ai_reason + ')' }}
-          </label>
-          <button class="btn" type="submit">Get brief</button>
         </form>
         <div class="stat" style="margin-top:16px">{{ db_count }} incidents on record.</div>
       </div>

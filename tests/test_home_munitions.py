@@ -48,7 +48,7 @@ def test_headline_wording():
 
 def test_report_form_moved_to_its_own_page(client):
     html = client.get("/report").data.decode()
-    assert 'action="/analyse"' in html and "Results appear here" in html
+    assert 'action="/analyse"' in html and "File a new report" in html
     assert "Munitions reference</h2>" not in html                # the old block is gone
     assert 'action="/clear"' not in html                         # no wipe button next to the form
 

@@ -35,6 +35,12 @@ _PATHS = {
            '<path d="M28 25c6 0 6-11 12-11"/><circle cx="41" cy="13" r="2"/>',
     "other": '<circle cx="24" cy="24" r="17"/><path d="M19 19.5c0-3 2.3-5 5-5s5 2 5 4.8c0 3.7-5 4.2-5 8.2"/>'
              '<path d="M24 33v.1"/>',
+    "vbied": '<path d="M5 30v-6l5-1 5-7h16l6 7 6 1v6z"/><circle cx="14" cy="31" r="4"/><circle cx="35" cy="31" r="4"/>'
+             '<path d="M17 16.5l-2 6.5M30 16.5l2 6.5"/>',
+    "uxo": '<path d="M10 30.5l17-11c5-3.2 11-3 14.5-.5-1.2 4.2-5.3 8.5-10.5 11.6L14 41.5"/>'
+           '<path d="M4 38h40"/><path d="M14.5 27.6l5.8 9"/>',
+    "cache": '<rect x="6" y="18" width="36" height="22" rx="2"/><path d="M6 26h36M21 22h6"/>'
+             '<path d="M12 18l3-8h18l3 8"/>',
     # --- home page actions
     "report": '<path d="M13 6h15l9 9v27H13z"/><path d="M28 6v9h9"/><path d="M18 24h14M18 30h14M18 36h8"/>',
     "brief": '<rect x="10" y="9" width="28" height="33" rx="3"/><path d="M18 9V6h12v3"/>'
@@ -97,3 +103,9 @@ def family_of(object_type: str) -> str:
     if "grenade" in object_type:
         return "grenade"
     return "other"
+
+
+# Form munition types (app.py _MUNITIONS keys) -> icon.
+MUNITION_ICON = {"ied": "ied", "vbied": "vbied", "uxo": "uxo", "mine": "mine", "mortar": "mortar",
+                 "rocket": "rocket", "missile": "missile", "artillery": "artillery",
+                 "grenade": "grenade", "cache": "cache", "other": "other"}

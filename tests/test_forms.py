@@ -142,7 +142,7 @@ def test_saved_confirmation_and_likely_network(client):
                                          "narrative": "Fabricated test. Command wire near Yaroun."}).data.decode()
     assert re.search(r'class="f-saved" role="status">Saved <strong class="mono">INC-041</strong>', html)
     assert 'hx-get="/network/INC-041/panel"' in html
-    assert 'data-busy-text="Saving…"' in html
+    assert 'data-busy-text="Saving…"' in client.get("/report").data.decode()
 
 
 def test_server_error_is_shown_next_to_the_form(client):

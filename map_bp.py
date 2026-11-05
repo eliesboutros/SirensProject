@@ -145,6 +145,12 @@ def border_geojson():
                     "geometry": {"type": "LineString", "coordinates": lebanon_border()}})
 
 
+@map_bp.route("/map/cazas.geojson")
+def cazas_geojson():
+    """Caza (district) outlines, for the place picker on the report form."""
+    return jsonify(_regions())
+
+
 @map_bp.route("/map/mask.geojson")
 def mask_geojson():
     """A world-sized polygon with Lebanon cut out, drawn over everything outside it."""

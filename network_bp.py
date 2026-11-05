@@ -18,6 +18,7 @@ from linker import decisions, store
 from linker.ai import _score_band
 from linker.cluster import Clusterer
 from linker.match import Matcher
+import report_view
 
 network_bp = Blueprint("network", __name__)
 
@@ -57,42 +58,44 @@ def panel(incident_id):
         return render_template_string(
             '<h2>Likely network</h2><div class="body"><div class="empty">'
             '{{ i }} is not on record, so it has no network.</div></div>', i=incident_id), 404
-    return render_template_string(_PANEL, n=net)
+    return render_template_string(_PANEL, n=net, feature_label=report_view.feature_label,
+                                  reason_label=report_view.reason_label)
 
 
-_PANEL = r"""<h2>Likely network &mdash; <span class="mono">{{ n.incident_id }}</span></h2>
-<div class="body">
+_PANEL = r"""<h2>Likely network</h2>
+<div class="body net-panel">
 {% if not n.cluster %}
-  <div class="empty">No likely network yet: no stored incident links to {{ n.incident_id }} with a
-    score of 0.25 or more and shared evidence. It will be re-checked every time the record changes.</div>
+  <p class="empty">No likely network yet: no stored incident links to {{ n.incident_id }} with a
+    score of 0.25 or more and shared evidence. It will be re-checked every time the record changes.</p>
 {% else %}
   {% set c = n.cluster %}
-  <p style="margin:0 0 10px">Clustering places it in candidate network <strong class="mono">{{ c.cluster_id }}</strong>
+  <p class="net-lead">Clustering places it in candidate network <strong class="mono">{{ c.cluster_id }}</strong>
     ({{ c.size }} incidents). Strongest link: <strong class="mono">{{ n.best.other.incident_id }}</strong>,
     score <span class="mono">{{ '%.2f'|format(n.best.score) }}</span> (<strong>{{ n.best.band }}</strong>).
     {% if n.best.band == 'weak' %}Every link into this network is weak, so treat the placement as tentative.{% endif %}</p>
-  <div class="subhead">Network members</div>
+  <h3 class="subhead">Network members</h3>
   <div class="chips">{% for m in c.members %}<span class="chip{{ ' ent' if m == n.incident_id else '' }}">{{ m }}</span>{% endfor %}</div>
   {% if c.signature %}
-  <div class="subhead">Common signature (shared by most members)</div>
-  <div class="chips">{% for s in c.signature %}<span class="chip">{{ s }}</span>{% endfor %}</div>
+  <h3 class="subhead">What most members share</h3>
+  <div class="chips">{% for s in c.signature %}<span class="chip sig">{{ feature_label(s) }}</span>{% endfor %}</div>
   {% endif %}
-  <div class="subhead">Why: this report's links into the network</div>
+  <h3 class="subhead">This report's links into the network</h3>
   {% for x in n.links %}
   <div class="match {{ x.band }}">
     <div class="top">
-      <span class="score {{ x.band }}">{{ '%.2f'|format(x.score) }}</span>
-      <span class="mid">{{ x.other.incident_id }}</span>
-      <span class="loc">{{ x.band }} &middot; {{ x.other.location or '—' }}{% if x.other.date %} · {{ x.other.date }}{% endif %}
-        {% if x.decision %} &middot; analyst: {{ x.decision }}{% endif %}</span>
+      <span class="band {{ x.band }}">{{ x.band|capitalize }}</span>
+      <span class="mid mono">{{ x.other.incident_id }}</span>
+      <span class="loc">{{ x.other.location or 'No location' }}{% if x.other.date %}, {{ x.other.date }}{% endif %}
+        {% if x.decision %}. Analyst: {{ x.decision }}{% endif %}</span>
+      <span class="score">{{ '%.2f'|format(x.score) }}</span>
     </div>
-    {% if x.reasons %}<ul class="reasons">{% for r in x.reasons %}<li>{{ r }}</li>{% endfor %}</ul>{% endif %}
+    {% if x.reasons %}<ul class="reasons">{% for r in x.reasons %}<li>{{ reason_label(r) }}</li>{% endfor %}</ul>{% endif %}
   </div>
   {% endfor %}
 {% endif %}
-  <div class="note" style="margin-top:12px">A lead for an analyst, not a conclusion. Bands are
+  <p class="note">A lead for an analyst, not a conclusion. Bands are
     computed in code (weak &lt; 0.40 &le; medium &lt; 0.66 &le; strong). Confirm or reject these links on
     <a href="{{ url_for('review.review_page') }}">review links</a>; see the whole picture on the
-    <a href="{{ url_for('link_tree') }}">link tree</a>.</div>
+    <a href="{{ url_for('link_tree') }}">link tree</a>.</p>
 </div>
 """

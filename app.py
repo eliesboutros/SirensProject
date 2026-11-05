@@ -174,7 +174,7 @@ def _analyse(new_inc: Incident, run_llm: bool):
     }
 
 
-@app.route("/", methods=["GET"])
+@app.route("/report", methods=["GET"])
 def index():
     return render_template_string(
         TEMPLATE,
@@ -261,11 +261,14 @@ def seed():
     incidents = load_incidents(SAMPLES)
     _EXTRACTOR.extract_all(incidents)
     store.add_incidents(incidents)
-    return redirect(url_for("index"))
+    return redirect(url_for("home.home_page"))
 
 
 @app.route("/clear", methods=["POST"])
 def clear():
+    # Wipes every report: only when the person typed CLEAR on the Data page.
+    if (request.form.get("confirm") or "").strip() != "CLEAR":
+        return redirect(url_for("demo.demo_page", clear="refused"))
     store.clear()
     # The metadata sidecar and filed photos are app.py's own; keep them in step
     # with the database so a wipe doesn't leave orphaned records behind.
@@ -279,7 +282,7 @@ def clear():
                 p.unlink()
             except OSError:
                 pass
-    return redirect(url_for("index"))
+    return redirect(url_for("home.home_page"))
 
 
 def _status() -> dict:
@@ -418,6 +421,7 @@ TEMPLATE = r"""{% import "forms_ui.html" as f %}{% macro ref_card(e) %}
   .btn:hover{background:#22303d}
   .btn.ghost{background:#fff;color:var(--ink)}
   .btn.ghost:hover{background:var(--line-2)}
+  .ready-h{margin:0 0 10px;font-size:17px;font-weight:600;color:var(--ink)}
   .toggle{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--ink-soft);
           margin-left:auto;font-weight:500}
   .toggle input{width:16px;height:16px}
@@ -473,12 +477,12 @@ TEMPLATE = r"""{% import "forms_ui.html" as f %}{% macro ref_card(e) %}
 </head>
 <body>
 <div class="bar">
-  <div class="brand">Sirens<small>C-IED Incident Link Console</small></div>
+  <a class="brand" href="/" style="color:inherit;text-decoration:none">Sirens<small>C-IED Incident Link Console</small></a>
   {{ sirens_menu('console') }}
   <div class="badges">
-    <span class="badge {{ 'on' if status.db_count else 'off' }}"><span class="dot"></span>{{ status.db_count }} in database</span>
-    <span class="badge {{ 'on' if status.sem_ok else 'off' }}"><span class="dot"></span>meaning: {{ 'vectors' if status.sem_ok else 'lexical' }}</span>
-    <span class="badge {{ 'on' if status.ai_ok else 'off' }}"><span class="dot"></span>AI: {{ 'ready' if status.ai_ok else 'off' }}</span>
+    <span class="badge {{ 'on' if status.db_count else 'off' }}"><span class="dot"></span>{{ status.db_count }} report{{ 's' if status.db_count != 1 }} on record</span>
+    <span class="badge {{ 'on' if status.sem_ok else 'off' }}"><span class="dot"></span>Meaning match: {{ 'word vectors' if status.sem_ok else 'basic' }}</span>
+    <span class="badge {{ 'on' if status.ai_ok else 'off' }}"><span class="dot"></span>AI summaries: {{ 'on' if status.ai_ok else 'off' }}</span>
   </div>
 </div>
 
@@ -543,19 +547,12 @@ TEMPLATE = r"""{% import "forms_ui.html" as f %}{% macro ref_card(e) %}
   <section>
   {% if not result %}
     <div class="card"><div class="body">
+      <h3 class="ready-h">Results appear here</h3>
       {% if status.db_count == 0 %}
-        <p class="empty">The database is empty. Load the 40 fabricated sample incidents to try it, then paste a new report to see what it links to.</p>
-        <form method="post" action="/seed"><button class="btn" type="submit">Load demo data (fabricated)</button></form>
+        <p class="empty">There are no reports on record to compare against yet. You can still analyse this one, or <a href="{{ url_for('demo.demo_page') }}">load the demo data</a> first.</p>
       {% else %}
-        <p class="empty">Paste a report on the left and press <strong>Analyse</strong>. Sirens checks it against the {{ status.db_count }} incidents on record — by shared signature and by meaning — and, with AI on, explains the strongest links.</p>
-        <div class="subhead">Or explore the record</div>
-        <div class="matches">
-          <a class="match" href="/dashboard" style="display:block;text-decoration:none;color:inherit"><span class="mid">Dashboard</span> <span class="loc">statistics, networks and data quality</span></a>
-          <a class="match" href="/review" style="display:block;text-decoration:none;color:inherit"><span class="mid">Review links</span> <span class="loc">confirm, reject or flag each link</span></a>
-          <a class="match" href="/tree" style="display:block;text-decoration:none;color:inherit"><span class="mid">Link tree</span> <span class="loc">graph of linked incidents</span></a>
-        </div>
-        <form method="post" action="/clear" onsubmit="return confirm('Delete all stored incidents?')">
-          <button class="btn ghost" type="submit">Clear database</button></form>
+        <p class="empty">Press <strong>Analyse</strong> to see which of the {{ status.db_count }} reports on record this one links to, and why: shared device features, shared people or phones, and similar wording. <strong>Save to database</strong> also files it and shows its likely network.</p>
+        <p class="empty">Looking up a munition? Use the <a href="{{ url_for('munitions.munitions_page') }}">munitions reference</a>.</p>
       {% endif %}
     </div></div>
   {% else %}
@@ -667,29 +664,9 @@ TEMPLATE = r"""{% import "forms_ui.html" as f %}{% macro ref_card(e) %}
   </section>
 </div>
 
-<section class="card" style="margin-top:22px">
-  <h2>Munitions reference</h2>
-  <div class="body">
-    <div class="note">{{ ref_disclaimer() }}</div>
-    <label for="reftype">Object type &mdash; pick a type to see public reference information</label>
-    <select id="reftype" onchange="showRef(this.value)">
-      <option value="">&mdash; select a type &mdash;</option>
-      {% for e in ref_all() %}<option value="{{ e.object_type }}">{{ e.label }}</option>{% endfor %}
-    </select>
-    <div id="refpanels" style="margin-top:14px">
-      {% for e in ref_all() %}
-        <div class="refwrap" id="ref-{{ e.object_type }}" style="display:none">{{ ref_card(e) }}</div>
-      {% endfor %}
-    </div>
-  </div>
-</section>
+
 </div>
 <script>
-function showRef(v){
-  var all = document.querySelectorAll('.refwrap');
-  for (var i = 0; i < all.length; i++){ all[i].style.display = 'none'; }
-  if (v){ var t = document.getElementById('ref-' + v); if (t){ t.style.display = 'block'; } }
-}
 (function(){
   function syncGrid(){
     var m = document.querySelector('input[name="grid_mode"]:checked');
@@ -1067,6 +1044,18 @@ def incident_map():
     legend = [{"key": k, "label": l, "color": c, "count": typecounts[k]}
               for k, l, c in _MUNITIONS if typecounts.get(k)]
     return map_bp.render_page(incidents, legend, unplaced=unplaced)
+
+
+def _marker_of(inc):
+    """(type label, marker colour) for an incident, as on the map."""
+    mun = _infer_munition(inc, _load_meta().get(inc.incident_id, {}).get("munition"))
+    return _MUNITION_LABEL.get(mun, mun), _MUNITION_COLOR.get(mun, "#8a929a")
+
+
+import home_bp
+home_bp.register(app, status=_status, marker_of=_marker_of)
+from munitions_bp import munitions_bp
+app.register_blueprint(munitions_bp)
 
 
 def _open():

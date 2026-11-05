@@ -43,7 +43,7 @@ def _parse(html):
     return p
 
 
-PAGES = ["/", "/brief", "/review", "/dashboard"]
+PAGES = ["/report", "/brief", "/review", "/dashboard"]
 
 
 @pytest.mark.parametrize("path", PAGES)
@@ -61,7 +61,7 @@ def test_every_form_field_has_help(client, path):
         assert f'id="h-{target}"' in client.get(path).data.decode()
 
 
-@pytest.mark.parametrize("path", ["/", "/brief", "/review"])       # the dashboard has no free-text boxes
+@pytest.mark.parametrize("path", ["/report", "/brief", "/review"])       # the dashboard has no free-text boxes
 def test_text_inputs_have_dir_auto(client, path):
     client.post("/seed")
     p = _parse(client.get(path).data.decode())
@@ -127,7 +127,7 @@ def test_review_filter_chip(client):
 
 
 def test_location_suggestions_and_unknown_place_note(client):
-    html = client.get("/").data.decode()
+    html = client.get("/report").data.decode()
     street = re.search(r'<input[^>]*id="street"[^>]*>', html, re.S).group(0)
     assert 'list="placelist"' in street and 'data-rules="place:placelist:caza"' in street
     places = re.search(r'<datalist id="placelist">(.*?)</datalist>', html, re.S).group(1)
@@ -142,7 +142,7 @@ def test_saved_confirmation_and_likely_network(client):
                                          "narrative": "Fabricated test. Command wire near Yaroun."}).data.decode()
     assert re.search(r'class="f-saved" role="status">Saved <strong class="mono">INC-041</strong>', html)
     assert 'hx-get="/network/INC-041/panel"' in html
-    assert 'data-busy-text="Saving…"' in html
+    assert 'data-busy-text="Saving…"' in client.get("/report").data.decode()
 
 
 def test_server_error_is_shown_next_to_the_form(client):

@@ -7,7 +7,7 @@ create duplicates (and a stored incident with a sample's id is overwritten).
 """
 from __future__ import annotations
 
-from flask import Blueprint, render_template_string
+from flask import Blueprint, render_template_string, request
 
 from linker import store
 
@@ -16,7 +16,8 @@ demo_bp = Blueprint("demo", __name__)
 
 @demo_bp.route("/demo")
 def demo_page():
-    return render_template_string(_TEMPLATE, db_count=store.count())
+    return render_template_string(_TEMPLATE, db_count=store.count(),
+                                  refused=request.args.get("clear") == "refused")
 
 
 _TEMPLATE = r"""<!doctype html>
@@ -59,6 +60,15 @@ _TEMPLATE = r"""<!doctype html>
        border-radius:4px;border:1px solid var(--ink);background:var(--ink);
        color:#fff;cursor:pointer}
   .btn:hover{background:#22303d}
+  .danger{margin-top:26px;border:1px solid #efc9c5;border-radius:9px;background:#fff;padding:22px 26px}
+  .danger h2{margin:0;font-size:17px;color:#a3312a}
+  .danger p{margin:8px 0 14px;color:var(--ink-soft)}
+  .danger label{display:block;font-size:14px;font-weight:600;margin-bottom:6px}
+  .danger input{font:15px var(--mono);padding:9px 11px;border:1px solid #cfd6d3;border-radius:6px;width:180px}
+  .danger .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+  .btn.red{background:#a3312a;border-color:#a3312a}
+  .btn.red:disabled{opacity:.45;cursor:not-allowed}
+  .refused{color:#a3312a;font-weight:600;margin:0 0 12px}
 </style>
 </head>
 <body>
@@ -80,6 +90,24 @@ _TEMPLATE = r"""<!doctype html>
     </form>
     <p class="stat">Incidents currently on record: {{ db_count }}</p>
   </div></div>
+
+  <section class="danger" id="danger" aria-labelledby="danger-t">
+    <h2 id="danger-t">Delete every report</h2>
+    <p>This removes all {{ db_count }} report{{ 's' if db_count != 1 }} on record, their filed photos and
+      their map details from this laptop. It cannot be undone. Analyst decisions and notes are kept.</p>
+    {% if refused %}<p class="refused" role="alert">Nothing was deleted: type CLEAR exactly to confirm.</p>{% endif %}
+    <form method="post" action="{{ url_for('clear') }}">
+      <label for="confirm">Type CLEAR to confirm</label>
+      <div class="row">
+        <input id="confirm" name="confirm" autocomplete="off" spellcheck="false">
+        <button class="btn red" id="wipe" type="submit" disabled>Delete every report</button>
+      </div>
+    </form>
+  </section>
+  <script>
+    (function(){ var i = document.getElementById('confirm'), b = document.getElementById('wipe');
+      i.addEventListener('input', function(){ b.disabled = i.value.trim() !== 'CLEAR'; }); })();
+  </script>
 </div>
 </body>
 </html>

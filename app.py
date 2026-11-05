@@ -27,7 +27,9 @@ from linker.match import Matcher
 from linker.cluster import Clusterer
 from linker import store, semantic, ai, reference, report
 from linker.models import Incident
-from linker.grid_ref import to_mgrs
+from linker.grid_ref import from_mgrs, to_mgrs
+from linker import regions
+import report_page
 
 ROOT = pathlib.Path(__file__).resolve().parent
 TAXONOMY = ROOT / "data" / "taxonomy" / "cied_lexicon.json"
@@ -97,6 +99,7 @@ def _save_photo(file_storage, location, previous_photo: str | None = None) -> st
     slug = _slug_city(location)
     stored = f"{slug}-{_next_index(slug):02d}{ext}"
     try:
+        PHOTOS_DIR.mkdir(parents=True, exist_ok=True)
         file_storage.save(str(PHOTOS_DIR / stored))     # write the new image first
     except OSError:
         return None
@@ -174,14 +177,17 @@ def _analyse(new_inc: Incident, run_llm: bool):
     }
 
 
-@app.route("/", methods=["GET"])
+def _page(mode="form", form=None, result=None, error=None, photo_name=None):
+    """Render the report page (report_page.py) with everything it needs."""
+    return report_page.render(
+        mode=mode, form=form or {}, result=result, error=error, status=_status(),
+        suggested_id=store.next_incident_id(), photo_name=photo_name,
+        have_map=map_bp.map_file().is_file(), photo_url=photo_url, **_form_options(form or {}))
+
+
+@app.route("/report", methods=["GET"])
 def index():
-    return render_template_string(
-        TEMPLATE,
-        result=None, form={}, status=_status(),
-        suggested_id=store.next_incident_id(),
-        **_form_options({}),
-    )
+    return _page()
 
 
 @app.route("/analyse", methods=["POST"])
@@ -189,21 +195,23 @@ def analyse():
     f = request.form
     narrative = (f.get("narrative") or "").strip()
     incident_id = (f.get("incident_id") or store.next_incident_id()).strip()
-    opts = _form_options(f)
 
     # Validate the one thing Sirens actually needs *before* writing anything to
     # disk, so a rejected report never leaves a stray uploaded photo behind.
     if not narrative:
-        return render_template_string(
-            TEMPLATE, result=None, form=f, status=_status(),
-            suggested_id=incident_id,
-            error="Paste a report narrative first — that's what Sirens reads.",
-            **opts)
+        return _page(form=f, error="Paste the report text first: it is what Sirens reads.",
+                     photo_name=f.get("photo") or None)
 
-    # Structured place: caza (dropdown) is authoritative for the map; street is
-    # the exact where. A human-readable location string is composed from both,
-    # falling back to any legacy free-text location field.
+    # Exact position (MGRS, a map pin, or legacy UTM) -> lat, lon + a display label.
+    lat, lon, grid, grid_err = _resolve_grid(f)
+    if grid_err:
+        return _page(form=f, error=grid_err, photo_name=f.get("photo") or None)
+
+    # Structured place: caza (dropdown, or from the pin) is authoritative for the
+    # map; street is the exact where. A readable location string joins both.
     caza = (f.get("caza") or "").strip()
+    if not caza and lat is not None:
+        caza = regions.caza_at(lat, lon) or ""
     street = (f.get("street") or "").strip()
     location = ", ".join(p for p in (street, caza) if p) or (f.get("location") or None)
 
@@ -224,10 +232,9 @@ def analyse():
     _EXTRACTOR.extract(inc)
     save = f.get("action") == "save"
 
-    # Optional precise grid (UTM or lat/lon) -> lat, lon + a display label.
-    lat, lon, grid, grid_err = _resolve_grid(f)
     munition = (f.get("munition") or "").strip()
-    item_color = (f.get("item_color") or "").strip()
+    item_color = ", ".join(p for p in ((f.get("item_color") or "").strip(),
+                                        (f.get("item_color_other") or "").strip()) if p)
     conditions = f.getlist("condition")
 
     if save:
@@ -249,11 +256,16 @@ def analyse():
         "caza": caza, "street": street,
         "munition": munition, "munition_label": _MUNITION_LABEL.get(munition, ""),
         "color": item_color, "condition": conditions, "grid": grid,
+        "grid_mgrs": to_mgrs(lat, lon) if lat is not None else "",
     }
-    return render_template_string(
-        TEMPLATE, result=result, form={}, status=_status(),
-        suggested_id=store.next_incident_id(), error=grid_err,
-        **_form_options({}))
+    if save:
+        return _page(mode="saved", result=result)
+    # Analyse only: keep everything typed, including the caza found from the pin
+    # and a photo already uploaded, so Save works without re-entering anything.
+    form = f.to_dict()
+    form["caza"] = caza
+    form["condition"] = conditions
+    return _page(form=form, result=result, photo_name=stored_photo)
 
 
 @app.route("/seed", methods=["POST"])
@@ -261,11 +273,14 @@ def seed():
     incidents = load_incidents(SAMPLES)
     _EXTRACTOR.extract_all(incidents)
     store.add_incidents(incidents)
-    return redirect(url_for("index"))
+    return redirect(url_for("home.home_page"))
 
 
 @app.route("/clear", methods=["POST"])
 def clear():
+    # Wipes every report: only when the person typed CLEAR on the Data page.
+    if (request.form.get("confirm") or "").strip() != "CLEAR":
+        return redirect(url_for("demo.demo_page", clear="refused"))
     store.clear()
     # The metadata sidecar and filed photos are app.py's own; keep them in step
     # with the database so a wipe doesn't leave orphaned records behind.
@@ -279,7 +294,7 @@ def clear():
                 p.unlink()
             except OSError:
                 pass
-    return redirect(url_for("index"))
+    return redirect(url_for("home.home_page"))
 
 
 def _status() -> dict:
@@ -293,421 +308,7 @@ def _status() -> dict:
     }
 
 
-TEMPLATE = r"""{% import "forms_ui.html" as f %}{% macro ref_card(e) %}
-<div class="refcard">
-  <div class="reftitle">{{ e.label }} <span class="refkey mono">{{ e.object_type }}</span></div>
-  {% if e.summary %}<p class="refsum">{{ e.summary }}</p>{% endif %}
-  {% if e.specs %}
-    <table class="refspecs">{% for row in e.specs %}<tr><th>{{ row[0] }}</th><td>{{ row[1] }}</td></tr>{% endfor %}</table>
-  {% endif %}
-  {% if e.ammunition %}
-    <div class="reflab">Ammunition categories</div>
-    <ul class="reflist">{% for a in e.ammunition %}<li>{{ a }}</li>{% endfor %}</ul>
-  {% endif %}
-  {% if e.deployment %}
-    <div class="reflab">Employment</div>
-    <ul class="reflist">{% for d in e.deployment %}<li>{{ d }}</li>{% endfor %}</ul>
-  {% endif %}
-  {% if e.responder_note %}<div class="refnote"><strong>Responder note.</strong> {{ e.responder_note }}</div>{% endif %}
-  {% if e.sources %}<div class="refsrc">{{ e.sources|join('; ') }}</div>{% endif %}
-</div>
-{% endmacro %}
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Sirens — Incident Link Console</title>
-<style>
-  :root{
-    --ink:#16202b; --ink-soft:#3a4652; --line:#e2e6e3; --line-2:#eef0ee;
-    --surface:#f4f6f3; --panel:#ffffff; --sig:#b5761f; --sig-soft:#f3e7d3;
-    --strong:#1f7a4d; --strong-bg:#e7f2ec; --medium:#8a6a13; --medium-bg:#f6efdc;
-    --weak:#7a8791; --weak-bg:#eef1f0; --link:#2d5b8e;
-    --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Roboto Mono",monospace;
-    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-  }
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--surface);color:var(--ink);font-family:var(--sans);
-       line-height:1.5;-webkit-font-smoothing:antialiased;position:relative}
-  body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
-       background:url('/static/siren-mark.jpeg') no-repeat center center;
-       background-size:min(70vw,1100px);opacity:.06;filter:grayscale(1)}
-  .bar,.wrap{position:relative;z-index:1}
-  a{color:var(--link)}
-  .bar{display:flex;align-items:center;gap:20px;flex-wrap:wrap;
-       padding:18px 32px;background:var(--ink);color:#eef2f5;
-       border-bottom:3px solid var(--sig)}
-  .brand{font-family:var(--mono);font-weight:600;letter-spacing:.16em;
-         text-transform:uppercase;font-size:15px}
-  .brand small{display:block;letter-spacing:.06em;font-size:10px;color:#9fb0bd;
-               font-weight:400;margin-top:2px}
-  .badges{margin-left:auto;display:flex;gap:10px;flex-wrap:wrap}
-  .badge{font-family:var(--mono);font-size:11px;letter-spacing:.04em;
-         padding:5px 10px;border-radius:2px;background:#22303d;color:#cdd8e0;
-         border:1px solid #2c3c4a;white-space:nowrap}
-  .badge .dot{display:inline-block;width:7px;height:7px;border-radius:50%;
-              margin-right:6px;vertical-align:middle;background:var(--weak)}
-  .badge.on .dot{background:#54d08a}.badge.off .dot{background:#d0574f}
-  .wrap{max-width:1720px;margin:0 auto;padding:40px 48px 90px}
-  .grid{display:grid;grid-template-columns:minmax(0,560px) minmax(0,1fr);gap:40px;align-items:start}
-  @media(max-width:1100px){.wrap{padding:28px 20px 60px}.grid{grid-template-columns:1fr}}
-  @media(max-width:840px){.grid{grid-template-columns:1fr}}
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:9px;
-        box-shadow:0 1px 2px rgba(22,32,43,.04),0 4px 16px rgba(22,32,43,.05)}
-  .card h2{margin:0;padding:14px 18px;border-bottom:1px solid var(--line-2);
-           font-size:12px;letter-spacing:.14em;text-transform:uppercase;
-           color:var(--ink-soft);font-family:var(--mono);font-weight:600}
-  .card .body{padding:24px 26px}
-  label{display:block;font-size:12px;letter-spacing:.03em;color:var(--ink-soft);
-        margin:0 0 5px;font-weight:600}
-  input[type=text],textarea{width:100%;padding:9px 11px;border:1px solid var(--line);
-        border-radius:4px;font-family:var(--sans);font-size:14px;color:var(--ink);
-        background:#fcfdfc}
-  input[type=text]:focus,textarea:focus{outline:2px solid var(--link);
-        outline-offset:1px;border-color:var(--link)}
-  textarea{min-height:230px;resize:vertical;line-height:1.6}
-  .row{display:flex;gap:12px}.row>div{flex:1;min-width:0}
-  .field{margin-bottom:20px}
-  .mono{font-family:var(--mono)}
-  .hint{font-size:12px;color:var(--weak);margin-top:5px}
-  .checks{display:flex;flex-wrap:wrap;gap:12px 22px;margin-top:4px}
-  .chk{display:inline-flex;align-items:center;gap:8px;margin:0;font-weight:500;
-       font-size:14px;color:var(--ink-soft);cursor:pointer;padding:4px 0}
-  .chk input{width:17px;height:17px;margin:0}
-  .gridmode{display:flex;gap:18px;margin-bottom:4px}
-  .gridrow{margin-top:8px}
-  .mini{font-size:11px;letter-spacing:.02em;color:var(--weak);margin:0 0 4px;font-weight:600}
-  input[type=file]{width:100%;font-size:13px;color:var(--ink-soft)}
-  input[type=file]::file-selector-button{font-family:var(--sans);font-size:13px;
-        font-weight:600;padding:8px 13px;margin-right:11px;border:1px solid var(--ink);
-        border-radius:4px;background:#fff;color:var(--ink);cursor:pointer}
-  input[type=file]::file-selector-button:hover{background:var(--line-2)}
-  .shot{display:block;margin-top:6px;width:max-content;max-width:100%}
-  .shot img{max-width:100%;max-height:300px;border:1px solid var(--line);
-        border-radius:5px;display:block}
-  .thumb{display:inline-block;margin-top:9px;line-height:0}
-  .thumb img{width:78px;height:78px;object-fit:cover;border:1px solid var(--line);
-        border-radius:4px;display:block}
-  /* munitions reference */
-  select{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:4px;
-        font-family:var(--sans);font-size:14px;color:var(--ink);background:#fcfdfc}
-  select:focus{outline:2px solid var(--link);outline-offset:1px;border-color:var(--link)}
-  .refcard{border:1px solid var(--line);border-left:4px solid var(--sig);border-radius:5px;
-        padding:13px 15px;margin-bottom:12px;background:#fffdf9}
-  .reftitle{font-weight:700;font-size:15px;color:var(--ink);display:flex;
-        align-items:center;gap:9px;flex-wrap:wrap}
-  .refkey{font-size:11px;font-weight:600;color:#7a4e12;background:var(--sig-soft);
-        border:1px solid #e6d3b0;border-radius:3px;padding:2px 7px}
-  .refsum{font-size:13.5px;color:var(--ink-soft);margin:8px 0 10px;line-height:1.55}
-  .refspecs{width:100%;border-collapse:collapse;font-size:13px;margin:0 0 10px}
-  .refspecs th{text-align:left;font-weight:600;color:var(--ink-soft);white-space:nowrap;
-        padding:3px 12px 3px 0;vertical-align:top;width:38%}
-  .refspecs td{padding:3px 0;color:var(--ink)}
-  .reflab{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--weak);
-        font-family:var(--mono);margin:6px 0 5px}
-  .reflist{margin:0 0 10px;padding-left:18px;font-size:13px;color:var(--ink-soft)}
-  .reflist li{padding:1px 0}
-  .refnote{font-size:13px;color:#8a3b12;background:#fbf0e6;border:1px solid #eecdb0;
-        border-radius:4px;padding:9px 12px;margin:4px 0 8px}
-  .refsrc{font-size:11.5px;color:var(--weak)}
-  .actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:6px}
-  .btn{font-family:var(--sans);font-size:14px;font-weight:600;padding:10px 16px;
-       border-radius:4px;border:1px solid var(--ink);background:var(--ink);
-       color:#fff;cursor:pointer}
-  .btn:hover{background:#22303d}
-  .btn.ghost{background:#fff;color:var(--ink)}
-  .btn.ghost:hover{background:var(--line-2)}
-  .toggle{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--ink-soft);
-          margin-left:auto;font-weight:500}
-  .toggle input{width:16px;height:16px}
-  .toggle.disabled{opacity:.5}
-  .err{background:#fbeceb;border:1px solid #e7b7b2;color:#a4332b;padding:10px 14px;
-       border-radius:4px;font-size:13px;margin-bottom:14px}
-  .note{font-size:12.5px;color:var(--ink-soft);background:var(--line-2);
-        border-radius:4px;padding:9px 12px;margin-bottom:14px}
-  .empty{color:var(--weak);font-size:14px;padding:8px 2px}
-  /* extracted signature chips */
-  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
-  .chip{font-family:var(--mono);font-size:11.5px;padding:3px 8px;border-radius:3px;
-        background:var(--sig-soft);color:#7a4e12;border:1px solid #e6d3b0}
-  .chip.ent{background:#e9eef4;color:#274a6e;border-color:#cdd9e6}
-  .subhead{font-size:11px;letter-spacing:.12em;text-transform:uppercase;
-           color:var(--weak);font-family:var(--mono);margin:16px 0 8px}
-  .subhead:first-child{margin-top:0}
-  /* match cards — the signature element */
-  .match{border:1px solid var(--line);border-left:4px solid var(--weak);
-         border-radius:5px;padding:12px 14px;margin-bottom:10px;background:#fff}
-  .match.strong{border-left-color:var(--strong)}
-  .match.medium{border-left-color:var(--medium)}
-  .match .top{display:flex;align-items:center;gap:10px}
-  .score{font-family:var(--mono);font-weight:700;font-size:13px;padding:3px 8px;
-         border-radius:3px;min-width:52px;text-align:center;color:var(--weak);
-         background:var(--weak-bg)}
-  .score.strong{color:var(--strong);background:var(--strong-bg)}
-  .score.medium{color:var(--medium);background:var(--medium-bg)}
-  .mid{font-family:var(--mono);font-weight:600;font-size:13px}
-  .loc{color:var(--weak);font-size:12.5px;margin-left:auto;text-align:right}
-  .reasons{margin:8px 0 0;padding-left:2px;list-style:none;font-size:13px;color:var(--ink-soft)}
-  .reasons li{padding:2px 0 2px 16px;position:relative}
-  .reasons li:before{content:"";position:absolute;left:2px;top:10px;width:6px;height:6px;
-        background:var(--sig);border-radius:50%}
-  .snippet{font-size:13px;color:var(--ink-soft);margin-top:6px}
-  /* AI panel */
-  .ai{border:1px solid #cdd9e6;background:#f5f9fd;border-radius:6px;padding:0;margin-top:4px}
-  .ai h3{margin:0;padding:11px 16px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;
-         font-family:var(--mono);color:#274a6e;border-bottom:1px solid #dce6f0;
-         display:flex;align-items:center;gap:8px}
-  .ai .txt{padding:14px 16px;font-size:14px;line-height:1.6;white-space:pre-wrap}
-  .ai .off{padding:12px 16px;font-size:13px;color:var(--ink-soft)}
-  .tag{font-family:var(--mono);font-size:10px;background:#274a6e;color:#fff;
-       padding:2px 7px;border-radius:2px;margin-left:auto;letter-spacing:.05em}
-  footer{max-width:1180px;margin:0 auto;padding:0 22px 40px;color:var(--weak);
-         font-size:12px}
-  @media(prefers-reduced-motion:no-preference){
-    .result-card{animation:rise .28s ease both}
-    @keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-  }
-</style>
-{{ f.assets() }}
-</head>
-<body>
-<div class="bar">
-  <div class="brand">Sirens<small>C-IED Incident Link Console</small></div>
-  {{ sirens_menu('console') }}
-  <div class="badges">
-    <span class="badge {{ 'on' if status.db_count else 'off' }}"><span class="dot"></span>{{ status.db_count }} in database</span>
-    <span class="badge {{ 'on' if status.sem_ok else 'off' }}"><span class="dot"></span>meaning: {{ 'vectors' if status.sem_ok else 'lexical' }}</span>
-    <span class="badge {{ 'on' if status.ai_ok else 'off' }}"><span class="dot"></span>AI: {{ 'ready' if status.ai_ok else 'off' }}</span>
-  </div>
-</div>
-
-<div class="wrap">
-<div class="grid">
-
-  <!-- LEFT: input -->
-  <section class="card">
-    <h2>New report</h2>
-    <div class="body">
-      {% if result and result.saved %}<div class="f-saved" role="status">Saved <strong class="mono">{{ result.incident.incident_id }}</strong> to the database. Its likely network is shown on the right.</div>{% endif %}
-      <form class="f-form" method="post" action="/analyse" enctype="multipart/form-data" novalidate>
-        {{ f.form_error(error) }}
-        {% call f.section("When & where") %}
-          {{ f.input("incident_id", "Incident ID", "incident_id", value=(form.incident_id or suggested_id), mono=True) }}
-          {{ f.input("date", "Date", "date", value=form.date, placeholder="2026-03-04", rules="date-advisory", optional=True) }}
-          {{ f.select("caza", "Caza (district)", "caza", cazas, selected=form.caza, blank="— select caza —", optional=True) }}
-          {{ f.input("street", "Town, village or street", "street", value=form.street, placeholder="e.g. Yaroun, main road",
-                     list="placelist", rules="place:placelist:caza", optional=True) }}
-          <datalist id="placelist">{% for pl in map_places() %}<option value="{{ pl }}">{% endfor %}</datalist>
-        {% endcall %}
-        {% call f.section("What happened") %}
-          {{ f.textarea("narrative", "Report narrative", "narrative", value=form.narrative, rules="required",
-                        placeholder="Paste the incident report here. Free text is fine: messy field reporting is what Sirens is built for.",
-                        required_msg="Paste the report narrative: it is the one field Sirens needs.") }}
-          {{ f.select("munition", "Munition / device type", "munition", munitions, selected=form.munition, blank="— select type —", optional=True) }}
-        {% endcall %}
-        {% set more_open = form.item_color or sel_conditions or form.utm_e or form.utm_n or form.lat or form.lon %}
-        {% call f.more("More details", open=more_open, sub="colour, condition, grid reference, photo") %}
-          {{ f.input("item_color", "Item colour / markings", "item_color", value=form.item_color, list="colorlist", placeholder="olive, rust, unpainted…", optional=True) }}
-          <datalist id="colorlist">{% for c in colors %}<option value="{{ c }}">{% endfor %}</datalist>
-          {{ f.choices("condition", "Condition", "condition", conditions, checked=sel_conditions, optional=True) }}
-          {{ f.choices("grid_mode", "Grid reference", "grid_mode", [("utm", "UTM"), ("latlon", "Lat / Lon")], checked=[form.grid_mode or 'utm'], kind="radio", optional=True) }}
-          <div class="f-wide f-gridrow" id="utmrow">
-            {{ f.select("utm_zone", "Zone", "utm_zone", [("36", "36"), ("37", "37")], selected=(form.utm_zone or "36")) }}
-            {{ f.input("utm_e", "Easting", "utm_e", value=form.utm_e, placeholder="731351", mono=True, inputmode="decimal", rules="number range:100000,900000 pair:utm_n") }}
-            {{ f.input("utm_n", "Northing", "utm_n", value=form.utm_n, placeholder="3753199", mono=True, inputmode="decimal", rules="number range:0,10000000 pair:utm_e") }}
-          </div>
-          <div class="f-wide f-gridrow" id="llrow" style="display:none">
-            {{ f.input("lat", "Latitude", "lat", value=form.lat, placeholder="33.2700", mono=True, inputmode="decimal", rules="number range:-90,90 pair:lon") }}
-            {{ f.input("lon", "Longitude", "lon", value=form.lon, placeholder="35.2000", mono=True, inputmode="decimal", rules="number range:-180,180 pair:lat") }}
-          </div>
-          <div class="f-wide">
-            <div class="f-field">
-              {{ f.label("photo_file", "Photo", "photo_file", optional=True) }}
-              <input class="f-input" type="file" id="photo_file" name="photo_file" accept="image/*" aria-describedby="e-photo_file">
-              <div class="f-error" id="e-photo_file" aria-live="polite"></div>
-            </div>
-          </div>
-        {% endcall %}
-        <div class="f-actions">
-          <button class="f-btn" type="submit" name="action" value="analyse" data-busy-text="Analysing…">Analyse</button>
-          <button class="f-btn ghost" type="submit" name="action" value="save" data-busy-text="Saving…">Save to database</button>
-          {{ f.toggle("use_ai", "AI assessment", "use_ai", checked=status.ai_ok, disabled=not status.ai_ok,
-                      note=('' if status.ai_ok else 'Off: ' ~ status.ai_reason)) }}
-        </div>
-      </form>
-    </div>
-  </section>
-
-  <!-- RIGHT: results -->
-  <section>
-  {% if not result %}
-    <div class="card"><div class="body">
-      {% if status.db_count == 0 %}
-        <p class="empty">The database is empty. Load the 40 fabricated sample incidents to try it, then paste a new report to see what it links to.</p>
-        <form method="post" action="/seed"><button class="btn" type="submit">Load demo data (fabricated)</button></form>
-      {% else %}
-        <p class="empty">Paste a report on the left and press <strong>Analyse</strong>. Sirens checks it against the {{ status.db_count }} incidents on record — by shared signature and by meaning — and, with AI on, explains the strongest links.</p>
-        <div class="subhead">Or explore the record</div>
-        <div class="matches">
-          <a class="match" href="/dashboard" style="display:block;text-decoration:none;color:inherit"><span class="mid">Dashboard</span> <span class="loc">statistics, networks and data quality</span></a>
-          <a class="match" href="/review" style="display:block;text-decoration:none;color:inherit"><span class="mid">Review links</span> <span class="loc">confirm, reject or flag each link</span></a>
-          <a class="match" href="/tree" style="display:block;text-decoration:none;color:inherit"><span class="mid">Link tree</span> <span class="loc">graph of linked incidents</span></a>
-        </div>
-        <form method="post" action="/clear" onsubmit="return confirm('Delete all stored incidents?')">
-          <button class="btn ghost" type="submit">Clear database</button></form>
-      {% endif %}
-    </div></div>
-  {% else %}
-    <div class="card result-card">
-      <h2>Signature extracted &mdash; <span class="mono">{{ result.incident.incident_id }}</span>{% if result.saved %} &nbsp;·&nbsp; saved{% endif %}</h2>
-      <div class="body">
-        {% set inc = result.incident %}
-        <div class="subhead">Device / TTP features</div>
-        {% if inc.features %}
-          <div class="chips">{% for f in inc.features %}<span class="chip">{{ f.facet }}={{ f.value }}</span>{% endfor %}</div>
-        {% else %}<div class="empty">No taxonomy features matched this text.</div>{% endif %}
-
-        {% if inc.persons or inc.groups or inc.phones %}
-          <div class="subhead">Entities</div>
-          <div class="chips">
-            {% for p in inc.persons %}<span class="chip ent">person: {{ p }}</span>{% endfor %}
-            {% for g in inc.groups %}<span class="chip ent">group: {{ g }}</span>{% endfor %}
-            {% for ph in inc.phones %}<span class="chip ent">phone: {{ ph }}</span>{% endfor %}
-          </div>
-        {% endif %}
-
-        {% set m = result.meta %}
-        {% if m and (m.caza or m.street or m.munition_label or m.color or m.condition or m.grid) %}
-          <div class="subhead">Filed details{% if not result.saved %} <span style="color:var(--weak);text-transform:none;letter-spacing:0">(save to keep them with the record)</span>{% endif %}</div>
-          <div class="chips">
-            {% if m.caza %}<span class="chip ent">caza: {{ m.caza }}</span>{% endif %}
-            {% if m.street %}<span class="chip ent">place: {{ m.street }}</span>{% endif %}
-            {% if m.munition_label %}<span class="chip">type: {{ m.munition_label }}</span>{% endif %}
-            {% if m.color %}<span class="chip">colour: {{ m.color }}</span>{% endif %}
-            {% for cnd in m.condition %}<span class="chip">{{ cnd }}</span>{% endfor %}
-            {% if m.grid %}<span class="chip mono">{{ m.grid }}</span>{% endif %}
-          </div>
-        {% endif %}
-
-        {% set purl = photo_url(inc) %}
-        {% if purl %}
-          <div class="subhead">Photo on file{% if not result.saved %} <span style="color:var(--weak);text-transform:none;letter-spacing:0">(save to keep it with the record)</span>{% endif %}</div>
-          <a class="shot" href="{{ purl }}" target="_blank" rel="noopener">
-            <img src="{{ purl }}" alt="Filed photo for {{ inc.incident_id }}"></a>
-          <div class="hint mono">{{ inc.photo }}</div>
-        {% endif %}
-      </div>
-    </div>
-    {% if result.saved %}<div class="card result-card" style="margin-top:16px" hx-get="{{ url_for('network.panel', incident_id=result.incident.incident_id) }}" hx-trigger="load"><h2>Likely network</h2><div class="body"><div class="empty">Finding the network this report falls into&hellip; (if this stays, see <a href="/review">review links</a>)</div></div></div>{% endif %}
-
-    {% if result.reference %}
-      <div class="card result-card" style="margin-top:16px">
-        <h2>Type reference &mdash; recognised in this report</h2>
-        <div class="body">
-          <div class="note">{{ ref_disclaimer() }}</div>
-          {% for e in result.reference %}{{ ref_card(e) }}{% endfor %}
-        </div>
-      </div>
-    {% endif %}
-
-    {% if result.assessment %}
-      <div class="ai result-card">
-        <h3>AI linkage assessment
-          {% if result.assessment.ok %}<span class="tag">{{ result.assessment.model }}</span>{% endif %}</h3>
-        {% if result.assessment.ok %}
-          <div class="txt">{{ result.assessment.text }}</div>
-          <div class="off" style="border-top:1px solid #dce6f0;padding-top:9px;margin-top:2px">
-            Generated by a small local model ({{ result.assessment.model }}) — verify every
-            claim against the <strong>Links found</strong> panel below before acting on it.
-          </div>
-        {% else %}
-          <div class="off">Assessment unavailable — {{ result.assessment.reason }}</div>
-        {% endif %}
-      </div>
-    {% endif %}
-
-    <div class="card result-card" style="margin-top:16px">
-      <h2>Links found</h2>
-      <div class="body">
-        <div class="subhead">By shared signature</div>
-        {% if result.structured %}
-          {% for h, link, band in result.structured %}
-          <div class="match {{ band }}">
-            <div class="top">
-              <span class="score {{ band }}">{{ '%.2f'|format(link.score) }}</span>
-              <span class="mid">{{ h.incident_id }}</span>
-              <span class="loc">{{ h.location or '—' }}{% if h.date %} · {{ h.date }}{% endif %}</span>
-            </div>
-            {% if link.reasons %}<ul class="reasons">{% for r in link.reasons %}<li>{{ r }}</li>{% endfor %}</ul>{% endif %}
-            {% set hp = photo_url(h) %}
-            {% if hp %}<a class="thumb" href="{{ hp }}" target="_blank" rel="noopener"><img src="{{ hp }}" alt="Photo on file for {{ h.incident_id }}"></a>{% endif %}
-          </div>
-          {% endfor %}
-        {% else %}<div class="empty">No shared-signature links above threshold.</div>{% endif %}
-
-        <div class="subhead">By meaning ({{ 'word vectors' if status.sem_ok else 'text overlap' }})</div>
-        {% if result.semantic %}
-          {% for h, sim, band in result.semantic %}
-          <div class="match {{ band }}">
-            <div class="top">
-              <span class="score {{ band }}">{{ '%.2f'|format(sim) }}</span>
-              <span class="mid">{{ h.incident_id }}</span>
-              <span class="loc">{{ h.location or '—' }}</span>
-            </div>
-            <div class="snippet">{{ h.narrative[:160] }}{% if h.narrative|length > 160 %}…{% endif %}</div>
-            {% set hp = photo_url(h) %}
-            {% if hp %}<a class="thumb" href="{{ hp }}" target="_blank" rel="noopener"><img src="{{ hp }}" alt="Photo on file for {{ h.incident_id }}"></a>{% endif %}
-          </div>
-          {% endfor %}
-        {% else %}<div class="empty">Nothing to compare against yet — save a few incidents first.</div>{% endif %}
-      </div>
-    </div>
-  {% endif %}
-  </section>
-</div>
-
-<section class="card" style="margin-top:22px">
-  <h2>Munitions reference</h2>
-  <div class="body">
-    <div class="note">{{ ref_disclaimer() }}</div>
-    <label for="reftype">Object type &mdash; pick a type to see public reference information</label>
-    <select id="reftype" onchange="showRef(this.value)">
-      <option value="">&mdash; select a type &mdash;</option>
-      {% for e in ref_all() %}<option value="{{ e.object_type }}">{{ e.label }}</option>{% endfor %}
-    </select>
-    <div id="refpanels" style="margin-top:14px">
-      {% for e in ref_all() %}
-        <div class="refwrap" id="ref-{{ e.object_type }}" style="display:none">{{ ref_card(e) }}</div>
-      {% endfor %}
-    </div>
-  </div>
-</section>
-</div>
-<script>
-function showRef(v){
-  var all = document.querySelectorAll('.refwrap');
-  for (var i = 0; i < all.length; i++){ all[i].style.display = 'none'; }
-  if (v){ var t = document.getElementById('ref-' + v); if (t){ t.style.display = 'block'; } }
-}
-(function(){
-  function syncGrid(){
-    var m = document.querySelector('input[name="grid_mode"]:checked');
-    var utm = document.getElementById('utmrow'), ll = document.getElementById('llrow');
-    if (!m || !utm || !ll) return;
-    var isLL = m.value === 'latlon';
-    utm.style.display = isLL ? 'none' : 'flex';
-    ll.style.display  = isLL ? 'flex' : 'none';
-  }
-  var radios = document.querySelectorAll('input[name="grid_mode"]');
-  for (var i = 0; i < radios.length; i++){ radios[i].addEventListener('change', syncGrid); }
-  syncGrid();
-})();
-</script>
-<footer>Decision-support for incident link analysis — every value traces to source text; a human analyst confirms any link. Photos are filed and shown beside linked incidents for the analyst to compare — never machine-analysed.</footer>
-<script src="{{ url_for('static', filename='vendor/htmx.min.js') }}"></script>
-</body>
-</html>"""
+# The report page itself lives in report_page.py.
 
 
 # ---------------------------------------------------------------------------
@@ -896,6 +497,13 @@ def _resolve_grid(f):
     """Turn whatever grid the form supplied (UTM or lat/lon) into lat, lon, a
     display label, and an optional error message. Out-of-range input is rejected
     with a note rather than silently producing a nonsense pin."""
+    ref = (f.get("mgrs") or "").strip()
+    if ref:
+        try:
+            lat, lon = from_mgrs(ref)
+        except ValueError as e:
+            return None, None, None, f"Grid reference not understood: {e}."
+        return round(lat, 6), round(lon, 6), _fmt_grid(lat, lon), None
     mode = f.get("grid_mode") or "utm"
     lat = lon = None
     if mode == "latlon":
@@ -924,7 +532,7 @@ def _resolve_grid(f):
 
 def _form_options(f):
     """Option lists the New-report form needs, shared by every render path."""
-    sel = f.getlist("condition") if hasattr(f, "getlist") else []
+    sel = f.getlist("condition") if hasattr(f, "getlist") else list(f.get("condition") or [])
     return dict(cazas=_CAZA_NAMES, munitions=_MUNITIONS,
                 colors=_ITEM_COLORS, conditions=_CONDITIONS, sel_conditions=sel)
 
@@ -1067,6 +675,18 @@ def incident_map():
     legend = [{"key": k, "label": l, "color": c, "count": typecounts[k]}
               for k, l, c in _MUNITIONS if typecounts.get(k)]
     return map_bp.render_page(incidents, legend, unplaced=unplaced)
+
+
+def _marker_of(inc):
+    """(type label, marker colour) for an incident, as on the map."""
+    mun = _infer_munition(inc, _load_meta().get(inc.incident_id, {}).get("munition"))
+    return _MUNITION_LABEL.get(mun, mun), _MUNITION_COLOR.get(mun, "#8a929a")
+
+
+import home_bp
+home_bp.register(app, status=_status, marker_of=_marker_of)
+from munitions_bp import munitions_bp
+app.register_blueprint(munitions_bp)
 
 
 def _open():

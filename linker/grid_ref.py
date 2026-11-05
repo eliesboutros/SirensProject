@@ -67,3 +67,70 @@ def to_mgrs(lat: float, lon: float, digits: int = 6) -> str:
     ee = int((e % 100000) // unit)
     nn = int((n % 100000) // unit)
     return f"{zone}{band} {col}{row} {ee:0{half}d} {nn:0{half}d}"
+
+
+# -- MGRS back to latitude/longitude ------------------------------------------
+_BETA = (
+    _N / 2 - 2 * _N ** 2 / 3 + 37 * _N ** 3 / 96,
+    _N ** 2 / 48 + _N ** 3 / 15,
+    17 * _N ** 3 / 480,
+)
+_DELTA = (
+    2 * _N - 2 * _N ** 2 / 3 - 2 * _N ** 3,
+    7 * _N ** 2 / 3 - 8 * _N ** 3 / 5,
+    56 * _N ** 3 / 15,
+)
+_MGRS_RE = None
+
+
+def utm_to_latlon(zone: int, easting: float, northing: float) -> tuple[float, float]:
+    """(lat, lon) for a northern-hemisphere UTM point (Krueger series)."""
+    xi = northing / (_K0 * _AA)
+    eta = (easting - 500000) / (_K0 * _AA)
+    xp = xi - sum(b * math.sin(2 * j * xi) * math.cosh(2 * j * eta) for j, b in enumerate(_BETA, 1))
+    ep = eta - sum(b * math.cos(2 * j * xi) * math.sinh(2 * j * eta) for j, b in enumerate(_BETA, 1))
+    chi = math.asin(math.sin(xp) / math.cosh(ep))
+    phi = chi + sum(d * math.sin(2 * j * chi) for j, d in enumerate(_DELTA, 1))
+    lon0 = (zone - 1) * 6 - 180 + 3
+    return math.degrees(phi), lon0 + math.degrees(math.atan2(math.sinh(ep), math.cos(xp)))
+
+
+def from_mgrs(ref: str) -> tuple[float, float]:
+    """(lat, lon) of the centre of the square an MGRS reference names.
+
+    Accepts spaces or none ("36S YB 049 833", "36SYB049833") and 2 to 10
+    digits. Northern hemisphere only (Lebanon). Raises ValueError with a
+    message that can be shown to the user."""
+    import re
+    global _MGRS_RE
+    _MGRS_RE = _MGRS_RE or re.compile(r"^(\d{1,2})([C-HJ-NP-X])([A-HJ-NP-Z])([A-HJ-NP-V])(\d*)$")
+    s = re.sub(r"\s+", "", (ref or "").upper())
+    m = _MGRS_RE.match(s)
+    if not m:
+        raise ValueError("write the grid like 36S YB 049 833 (zone, band, square letters, digits)")
+    zone, band, col, row, digits = int(m.group(1)), m.group(2), m.group(3), m.group(4), m.group(5)
+    if not 1 <= zone <= 60:
+        raise ValueError("the zone number must be between 1 and 60")
+    if len(digits) % 2 or len(digits) > 10:
+        raise ValueError("give the same number of easting and northing digits (for example 3 and 3)")
+    cols = _COLS[(zone - 1) % 3]
+    if col not in cols:
+        raise ValueError(f"the square letters {col}{row} do not exist in zone {zone}")
+    half = len(digits) // 2
+    unit = 10 ** (5 - half) if half else 100000
+    e_in = int(digits[:half]) * unit if half else 0
+    n_in = int(digits[half:]) * unit if half else 0
+    easting = (cols.index(col) + 1) * 100000 + e_in + unit / 2
+    n_mod = ((_ROWS.index(row) - (5 if zone % 2 == 0 else 0)) % 20) * 100000 + n_in + unit / 2
+    band_lat = -80 + 8 * _BANDS.index(band)
+    if band_lat < 0:
+        raise ValueError("only northern-hemisphere grid references are supported")
+    lon0 = (zone - 1) * 6 - 180 + 3
+    min_n = to_utm(band_lat, lon0, zone)[3]
+    northing = n_mod
+    while northing < min_n - 100000:
+        northing += 2000000
+    lat, lon = utm_to_latlon(zone, easting, northing)
+    if _BANDS[min(int((lat + 80) // 8), len(_BANDS) - 1)] != band:
+        raise ValueError(f"square {col}{row} does not fall in band {band} of zone {zone}")
+    return lat, lon

@@ -33,8 +33,8 @@ HELP = {
     "narrative": "The free-text report. Sirens reads it to pick out descriptive features, names, "
                  "groups and phone numbers, and compares them with past reports. Required.",
     "munition": "The reported category of item. It sets the colour of the report's marker on the "
-                "map; if left empty, Sirens guesses a category from the narrative.",
-    "item_color": "Colour or markings as described in the report (for example olive, rust). "
+                "map; if you choose Not sure, Sirens guesses a category from the narrative.",
+    "item_color": "The main colour as described in the report. "
                   "Kept with the record for comparison; it is not used to score links.",
     "condition": "How the item was described (buried, corroded and so on). Tick all that apply. "
                  "Kept with the record; it is not used to score links.",
@@ -46,6 +46,10 @@ HELP = {
     "utm_n": "UTM northing in metres. Give it together with the easting.",
     "lat": "Latitude in decimal degrees (for example 33.27). Give it together with the longitude.",
     "lon": "Longitude in decimal degrees (for example 35.20). Give it together with the latitude.",
+    "mgrs": "The grid reference of the exact spot, in MGRS, for example 36S YB 049 833. Click the map "
+            "to fill it in, or type it and the pin moves there. Leave empty if only the caza is known.",
+    "item_color_other": "Use this when the colour is not in the list, or to add markings or writing "
+                        "seen on the item. Kept with the record; it is not used to score links.",
     "photo_file": "An optional image filed with the record and shown beside linked incidents for "
                   "visual comparison by an analyst. It is not analysed. JPG, PNG, WEBP or GIF, up to 8 MB.",
     "use_ai": "Ask the local AI model (Ollama, on this machine) for a short written summary of the "

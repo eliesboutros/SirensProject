@@ -17,8 +17,10 @@ from markupsafe import Markup, escape
 # (group, [(page key, label, endpoint, one-line description), ...])
 MENU = [
     ("Reports", [
+        ("home", "Home", "home.home_page", "The record at a glance and links waiting for review"),
         ("console", "New report", "index", "Paste, analyse and file an incident report"),
         ("brief", "Pre-arrival brief", "brief.brief_page", "What past reporting says about a place"),
+        ("munitions", "Munitions reference", "munitions.munitions_page", "Recognise and catalogue munitions by family"),
     ]),
     ("Analysis", [
         ("dashboard", "Dashboard", "dashboard.dashboard_page", "Statistics and charts over the record"),

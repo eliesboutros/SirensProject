@@ -171,85 +171,118 @@ _PAGE = r"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Sirens — Map</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='sirens.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='vendor/maplibre-gl/maplibre-gl.css') }}">
 <style>
-  :root{--ink:#16202b;--soft:#3a4652;--weak:#7a8791;--line:#e2e6e3;--line2:#eef0ee;--surface:#f4f6f3;
-    --sig:#a8703a;--sig-soft:#f0e6d4;--mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
-    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
-  *{box-sizing:border-box}
   html,body{height:100%}
-  /* The map fills exactly the viewport under the header; only the incident list scrolls. */
-  body{margin:0;background:var(--surface);color:var(--ink);font-family:var(--sans);line-height:1.5;
-       display:flex;flex-direction:column;height:100vh;overflow:hidden}
-  .bar{display:flex;align-items:center;gap:20px;flex-wrap:wrap;padding:18px 32px;background:var(--ink);
-       color:#eef2f5;border-bottom:3px solid var(--sig)}
-  .brand{font-family:var(--mono);font-weight:600;letter-spacing:.16em;text-transform:uppercase;font-size:15px}
-  .brand small{display:block;letter-spacing:.06em;font-size:10px;color:#9fb0bd;font-weight:400;margin-top:2px}
-  .stage{flex:1;display:grid;grid-template-columns:minmax(0,1fr) 330px;grid-template-rows:minmax(0,1fr);min-height:0}
+  /* The map fills the viewport under the header; only the side list scrolls. */
+  body{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+  .stage{flex:1;display:grid;grid-template-columns:minmax(0,1fr) 360px;grid-template-rows:minmax(0,1fr);min-height:0}
   @media(max-width:900px){body{height:auto;overflow:visible}
     .stage{grid-template-columns:1fr;grid-template-rows:62vh auto}}
-  #map{position:relative;min-height:420px;background:#e9ece8}
-  .side{background:#fff;border-left:1px solid var(--line);overflow-y:auto;padding:16px 18px 24px}
+  #map{position:relative;min-height:420px;background:#eef1ee}
+  .side{background:#fff;border-left:1px solid var(--line);overflow-y:auto;display:flex;flex-direction:column}
   @media(max-width:900px){.side{border-left:0;border-top:1px solid var(--line)}}
-  .side h2{font-family:var(--mono);font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--soft);
-           margin:6px 0 10px;font-weight:600}
-  .note{font-size:12.5px;color:var(--soft);background:var(--line2);border-radius:6px;padding:9px 11px;margin:0 0 14px}
-  .legend{display:flex;flex-wrap:wrap;gap:6px 12px;margin:0 0 14px;font-size:12.5px;color:var(--soft)}
-  .legend span{display:inline-flex;align-items:center;gap:6px}
-  .dot{width:10px;height:10px;border-radius:50%;display:inline-block;box-shadow:0 0 0 2px #fff,0 0 0 3px rgba(22,32,43,.15)}
-  .inc{display:block;width:100%;text-align:left;background:#fff;border:1px solid var(--line);border-radius:8px;
-       padding:9px 11px;margin:0 0 8px;cursor:pointer;font:inherit;color:inherit}
-  .inc:hover,.inc:focus-visible{border-color:var(--sig);outline:none}
-  .inc b{font-family:var(--mono);font-size:12.5px}
-  .inc small{display:block;color:var(--weak);font-size:12px}
+  .side-head{padding:18px 18px 12px;border-bottom:1px solid var(--line-2);position:sticky;top:0;background:#fff;z-index:2}
+  .side-head h1{font-size:19px;margin:0 0 2px}
+  .side-head .count{font-size:13.5px;color:var(--muted);margin:0 0 12px}
+  .side input[type=search],.side select{width:100%;font:14.5px var(--sans);padding:9px 11px;border:1px solid #cfd6d3;
+    border-radius:8px;background:#fff;color:var(--ink)}
+  .filters{display:grid;gap:10px}
+  .row2{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}
+  .switch{display:inline-flex;align-items:center;gap:7px;font-size:13.5px;color:var(--ink-soft);white-space:nowrap;cursor:pointer}
+  .switch input{width:16px;height:16px;accent-color:var(--ink)}
+  .types{display:flex;flex-wrap:wrap;gap:6px}
+  .type{display:inline-flex;align-items:center;gap:7px;font:13px/1 var(--sans);padding:6px 10px 6px 8px;border-radius:20px;
+    border:1px solid var(--line);background:#fff;color:var(--ink-soft);cursor:pointer}
+  .type .n{color:var(--muted)}
+  .type[aria-pressed="false"]{opacity:.45;text-decoration:line-through}
+  .dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex:none}
+  .dot.approx{box-shadow:inset 0 0 0 2.5px var(--c)}
+  .list{padding:10px 12px 18px}
+  .inc{display:grid;grid-template-columns:auto 1fr auto;gap:2px 10px;align-items:center;width:100%;text-align:left;
+    background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:0 0 8px;cursor:pointer;font:inherit;color:inherit}
+  .inc:hover,.inc:focus-visible,.inc.on{border-color:var(--sig)}
+  .inc[hidden]{display:none}
+  .inc b{font-family:var(--mono);font-size:13px;font-weight:600}
+  .inc .t{font-size:13.5px;color:var(--ink-soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .inc small{grid-column:2/4;color:var(--muted);font-size:12.5px}
+  .inc .pos{font-size:12px;color:var(--muted);white-space:nowrap}
+  .none{color:var(--muted);text-align:center;padding:20px}
+  .notes{padding:4px 18px 22px;font-size:13px;color:var(--muted)}
+  .notes p{margin:0 0 10px}
+  .banner{position:absolute;z-index:4;top:10px;left:50%;transform:translateX(-50%);max-width:calc(100% - 120px);
+    background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 14px;font-size:13.5px;
+    box-shadow:0 2px 8px rgba(22,32,43,.12);color:var(--ink-soft)}
+  .banner code{font-family:var(--mono);background:var(--line-2);padding:1px 5px;border-radius:4px}
   .missing{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:24px}
-  .missing .card{max-width:520px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:22px 24px;
-       box-shadow:0 1px 2px rgba(22,32,43,.04),0 4px 16px rgba(22,32,43,.06)}
+  .missing .card{max-width:520px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:22px 24px}
   .missing h1{font-size:17px;margin:0 0 8px}
-  .missing code{font-family:var(--mono);background:var(--line2);padding:2px 6px;border-radius:4px}
   .tip{position:absolute;z-index:5;pointer-events:none;background:#fff;border:1px solid var(--line);border-radius:7px;
-       padding:6px 9px;font-size:12.5px;box-shadow:0 2px 6px rgba(22,32,43,.1),0 8px 20px rgba(22,32,43,.12);display:none;
-       max-width:280px}
-  .tip .ref{font-family:var(--mono);font-size:11.5px;color:var(--soft)}
-  .maplibregl-popup-content{font-family:var(--sans);font-size:13px;border-radius:9px;padding:12px 14px;max-width:300px}
-  .pop h3{font-family:var(--mono);font-size:13px;margin:0 0 4px}
-  .pop .meta{color:var(--weak);font-size:12px;margin:0 0 6px}
-  .pop .row{margin:2px 0}
-  .pop .approx{font-size:11.5px;color:#7a4e12;background:var(--sig-soft);border-radius:4px;padding:2px 6px;display:inline-block;margin-top:4px}
-  .pop .snip{color:var(--soft);font-size:12.5px;margin-top:6px}
-  .readout{position:absolute;z-index:4;left:50%;bottom:12px;transform:translateX(-50%);background:rgba(255,255,255,.95);
-       border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-size:12.5px;color:var(--soft);
-       box-shadow:0 2px 8px rgba(22,32,43,.12);white-space:nowrap}
-  .readout b{font-family:var(--mono);color:var(--ink);font-weight:600;letter-spacing:.02em}
+    padding:6px 9px;font-size:12.5px;box-shadow:0 2px 6px rgba(22,32,43,.1),0 8px 20px rgba(22,32,43,.12);display:none;max-width:280px}
+  .tip .ref{font-family:var(--mono);font-size:11.5px;color:var(--ink-soft)}
+  .maplibregl-popup-content{font-family:var(--sans);font-size:13.5px;border-radius:10px;padding:14px 16px;max-width:320px}
+  .pop h3{font-size:15px;margin:0 0 2px;display:flex;align-items:center;gap:8px}
+  .pop h3 b{font-family:var(--mono)}
+  .pop .meta{color:var(--muted);font-size:12.5px;margin:0 0 8px}
+  .pop dl{margin:0 0 8px;display:grid;grid-template-columns:auto 1fr;gap:3px 10px}
+  .pop dt{color:var(--muted)}
+  .pop dd{margin:0}
+  .pop .approx{font-size:12px;color:var(--sig-deep);background:var(--sig-soft);border-radius:5px;padding:3px 7px;display:inline-block}
+  .pop .exact{font-size:12px;color:var(--strong);background:var(--strong-bg);border-radius:5px;padding:3px 7px;display:inline-block}
+  .pop .snip{color:var(--ink-soft);font-size:13px;margin:8px 0 0}
+  .pop button{margin-top:10px;font:600 13px var(--sans);padding:7px 11px;border-radius:6px;border:1px solid var(--ink);background:#fff;cursor:pointer}
+  .readout{position:absolute;z-index:4;left:50%;bottom:14px;transform:translateX(-50%);background:rgba(255,255,255,.96);
+    border:1px solid var(--line);border-radius:999px;padding:7px 16px;font-size:13px;color:var(--ink-soft);
+    box-shadow:0 2px 8px rgba(22,32,43,.12);white-space:nowrap}
+  .readout b{font-family:var(--mono);color:var(--ink);font-weight:600}
   .readout.copied{border-color:#c9dcc6;background:#e7efe5;color:#3d6b45}
 </style>
 </head><body>
-<div class="bar"><div class="brand">Sirens<small>incident map · Lebanon (offline street map)</small></div>{{ sirens_menu('map') }}</div>
+<div class="bar"><a class="brand" href="{{ url_for('home.home_page') }}">Sirens<small>C-IED Incident Link Console</small></a>{{ sirens_menu('map') }}</div>
 <div class="stage">
-  <div id="map" role="region" aria-label="Street map of Lebanon with incident markers">
+  <div id="map" role="region" aria-label="Map of Lebanon with incident markers">
     {% if not have_map %}
-    <div class="missing"><div class="card" role="status">
-      <h1>Offline map not installed — run <code>bash setup.sh</code></h1>
-      <p>The street map is one file, <code>data/map/lebanon.pmtiles</code>, downloaded once by <code>setup.sh</code>
-        (it is not stored in git). After that the map works with no internet. The incidents are listed on the right.</p>
-    </div></div>
+    <div class="banner" role="status">Offline map not installed — run <code>bash setup.sh</code>. Showing district outlines only.</div>
     {% endif %}
   </div>
-  <aside class="side">
-    <h2>Incidents on the map ({{ incidents|length }})</h2>
-    <p class="note">Positions follow the record: a filed grid reference gives an exact point; other reports are placed
-      at their caza (district) and spread around its centre, so the marker is approximate.</p>
-    {% if unplaced %}<p class="note">{{ unplaced }} report(s) have no known caza or grid reference, so they are not on the map.</p>{% endif %}
-    {% if legend %}<div class="legend">{% for t in legend %}<span><i class="dot" style="background:{{ t.color }}"></i>{{ t.label }} ({{ t.count }})</span>{% endfor %}</div>{% endif %}
-    {% for i in incidents %}
-    <button type="button" class="inc" data-id="{{ i.id }}"><b>{{ i.id }}</b> · {{ i.typelabel }}
-      <small>{{ i.loc or 'no location' }} · {{ i.date or 'no date' }} · {{ 'exact grid' if i.exact else 'approx. (caza level)' }}</small></button>
-    {% else %}<p class="note">No incidents could be placed. Load the demo data or file a report with a caza.</p>{% endfor %}
-    <p class="note"><strong>MGRS grid</strong> (6-digit, 100 m): 100 km squares when zoomed out, 10 km lines at
-      district zoom, 1 km lines up close. Move over the map to read a reference; click to copy it.
-      Lebanon spans zones <b>36S</b> and <b>37S</b>, which meet at <b>36&deg;E</b> in the Bekaa: the grid jumps
-      at that line, which is correct.</p>
-    <p class="note" style="margin-top:14px">Map data {{ attribution }}. Street map shown for orientation only.</p>
+  <aside class="side" aria-label="Incidents">
+    <div class="side-head">
+      <h1>Incidents on the map</h1>
+      <p class="count" id="count" aria-live="polite">{{ incidents|length }} shown{% if unplaced %}; {{ unplaced }} without a caza or grid are not on the map{% endif %}</p>
+      <div class="filters">
+        <input type="search" id="q" placeholder="Search ID, place or text" aria-label="Search incidents">
+        <div class="row2">
+          <select id="caza" aria-label="Caza">
+            <option value="">All cazas</option>
+            {% for c in incidents|map(attribute='caza')|reject('equalto', '')|unique|sort %}<option>{{ c }}</option>{% endfor %}
+          </select>
+          <label class="switch"><input type="checkbox" id="exact"> Exact grid only</label>
+        </div>
+        {% if legend %}<div class="types" role="group" aria-label="Show types">
+          {% for t in legend %}<button type="button" class="type" data-type="{{ t.key }}" aria-pressed="true">
+            <i class="dot" style="background:{{ t.color }}"></i>{{ t.label }} <span class="n">{{ t.count }}</span></button>{% endfor %}
+        </div>{% endif %}
+      </div>
+    </div>
+    <div class="list">
+      {% for i in incidents %}
+      <button type="button" class="inc" data-id="{{ i.id }}">
+        <i class="dot{{ '' if i.exact else ' approx' }}" style="background:{{ i.fill if i.exact else '#fff' }};--c:{{ i.fill }}"></i>
+        <span class="t"><b>{{ i.id }}</b> {{ i.typelabel }}</span>
+        <span class="pos">{{ 'exact' if i.exact else 'approx.' }}</span>
+        <small>{{ i.loc or 'no location' }} · {{ i.date or 'no date' }}</small></button>
+      {% else %}<p class="none">No incidents could be placed. Load the demo data or file a report with a caza.</p>{% endfor %}
+      <p class="none" id="nomatch" hidden>No incident matches these filters.</p>
+    </div>
+    <div class="notes">
+      <p>A solid marker is an exact position from a filed grid reference. A hollow marker is approximate: the report
+        is placed at its caza and spread around the centre.</p>
+      <p>MGRS grid: 100 km squares when zoomed out, 10 km lines at district zoom, 1 km lines up close. Move over the
+        map to read a reference; click to copy it. Lebanon spans zones 36S and 37S, which meet at 36°E in the Bekaa:
+        the grid jumps at that line, which is correct.</p>
+      <p>Map data {{ attribution }}. Street map shown for orientation only.</p>
+    </div>
   </aside>
 </div>
 <script id="map-data" type="application/json">{{ {'incidents': incidents, 'bounds': bounds, 'have_map': have_map}|tojson }}</script>
@@ -267,25 +300,34 @@ window.sirensMapReady = false;
 
 function popupNode(i) {
   const el = document.createElement('div'); el.className = 'pop';
-  const add = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; n.textContent = text; el.appendChild(n); return n; };
-  add('h3', '', i.id + ' · ' + i.typelabel);
-  add('div', 'meta', (i.date || 'no date') + ' · ' + (i.loc || 'no location'));
-  if (i.street) add('div', 'row', 'Place: ' + i.street);
-  if (i.item_color) add('div', 'row', 'Colour / markings: ' + i.item_color);
-  if (i.condition && i.condition.length) add('div', 'row', 'Condition: ' + i.condition.join(', '));
-  if (i.grid) add('div', 'row', 'Grid: ' + i.grid);
-  if (i.mgrs) add('div', 'row', 'MGRS: ' + i.mgrs + (i.exact ? '' : ' (approx., caza centre)'));
-  add('span', 'approx', i.exact ? 'Exact: from the filed grid reference' : 'Approx. — placed at caza level');
-  if (i.snip) add('div', 'snip', i.snip);
+  const add = (parent, tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; parent.appendChild(n); return n; };
+  const h = add(el, 'h3'); const d = add(h, 'i', 'dot'); d.style.background = i.fill; add(h, 'b', '', i.id); add(h, 'span', '', i.typelabel);
+  add(el, 'div', 'meta', [i.date || 'no date', i.loc || 'no location'].join(' · '));
+  const dl = add(el, 'dl');
+  const row = (k, v) => { if (v) { add(dl, 'dt', '', k); add(dl, 'dd', '', v); } };
+  row('Place', i.street); row('Colour', i.item_color);
+  row('Condition', (i.condition || []).join(', '));
+  row('MGRS', i.mgrs && (i.mgrs + (i.exact ? '' : ' (approx., caza centre)')));
+  add(el, 'span', i.exact ? 'exact' : 'approx', i.exact ? 'Exact: from the filed grid reference' : 'Approximate: placed at the caza centre');
+  if (i.snip) add(el, 'p', 'snip', i.snip);
+  if (i.mgrs) {
+    const b = add(el, 'button', '', 'Copy MGRS'); b.type = 'button';
+    b.addEventListener('click', async () => { b.textContent = (await copyText(i.mgrs)) ? 'Copied' : 'Could not copy'; });
+  }
   return el;
+}
+async function copyText(text) {
+  try { await navigator.clipboard.writeText(text); return true; } catch (err) {
+    const t = Object.assign(document.createElement('textarea'), {value: text}); document.body.appendChild(t); t.select();
+    const ok = document.execCommand('copy'); t.remove(); return ok; }
 }
 
 const points = {type: 'FeatureCollection', features: D.incidents.map(i => ({
-  type: 'Feature', id: i.id, properties: {id: i.id, fill: i.fill},
+  type: 'Feature', id: i.id, properties: {id: i.id, fill: i.fill, exact: i.exact, type: i.type, caza: i.caza},
   geometry: {type: 'Point', coordinates: [i.lon, i.lat]}}))};
 const byId = Object.fromEntries(D.incidents.map(i => [i.id, i]));
 
-if (D.have_map) {
+{
   const protocol = new pmtiles.Protocol();
   maplibregl.addProtocol('pmtiles', protocol.tile);
   let style = null;
@@ -297,7 +339,11 @@ if (D.have_map) {
     document.getElementById('map').appendChild(box);
   }
   if (style) {
-  style.sources.protomaps.url = 'pmtiles://' + location.origin + "{{ url_for('offmap.pmtiles_file') }}";
+  if (D.have_map) style.sources.protomaps.url = 'pmtiles://' + location.origin + "{{ url_for('offmap.pmtiles_file') }}";
+  else {   // no street map: keep the background and the local fonts, drop the tiles
+    delete style.sources.protomaps;
+    style.layers = style.layers.filter(l => !l.source);
+  }
   const map = new maplibregl.Map({
     container: 'map', style, bounds: [[x0, y0], [x1, y1]], fitBoundsOptions: {padding: 20},
     maxBounds: [[x0 - padX, y0 - padY], [x1 + padX, y1 + padY]], minZoom: 6.5, maxZoom: 17,
@@ -314,10 +360,16 @@ if (D.have_map) {
     map.addLayer({id: 'outside-lebanon', type: 'fill', source: 'mask', paint: {'fill-color': '#e7eae6', 'fill-opacity': 0.92}});
     map.addSource('border', {type: 'geojson', data: "{{ url_for('offmap.border_geojson') }}"});
     map.addLayer({id: 'lebanon-border', type: 'line', source: 'border', paint: {'line-color': '#a8703a', 'line-width': 1.6, 'line-opacity': 0.8}});
+    map.addSource('cazas', {type: 'geojson', data: "{{ url_for('offmap.cazas_geojson') }}"});
+    map.addLayer({id: 'caza-lines', type: 'line', source: 'cazas',
+      paint: {'line-color': '#7c8790', 'line-width': D.have_map ? 0.6 : 0.9, 'line-opacity': D.have_map ? 0.5 : 0.9}});
     map.addSource('incidents', {type: 'geojson', data: points});
+    // Exact positions solid; approximate (caza-level) hollow, in the type colour.
     map.addLayer({id: 'incidents', type: 'circle', source: 'incidents', paint: {
-      'circle-radius': ['interpolate', ['linear'], ['zoom'], 7, 5, 13, 8], 'circle-color': ['get', 'fill'],
-      'circle-stroke-color': '#ffffff', 'circle-stroke-width': 2}});
+      'circle-radius': ['interpolate', ['linear'], ['zoom'], 7, 5.5, 13, 9],
+      'circle-color': ['case', ['get', 'exact'], ['get', 'fill'], '#ffffff'],
+      'circle-stroke-color': ['case', ['get', 'exact'], '#ffffff', ['get', 'fill']],
+      'circle-stroke-width': ['case', ['get', 'exact'], 2, 3]}});
 
     const open = id => {
       const i = byId[id]; if (!i) return;
@@ -328,11 +380,34 @@ if (D.have_map) {
     map.on('mouseenter', 'incidents', () => { map.getCanvas().style.cursor = 'pointer'; });
     map.on('mouseleave', 'incidents', () => { map.getCanvas().style.cursor = ''; });
     document.querySelectorAll('.inc').forEach(b => b.addEventListener('click', () => {
-      const i = byId[b.dataset.id]; map.flyTo({center: [i.lon, i.lat], zoom: Math.max(map.getZoom(), 11)}); open(i.id);
+      document.querySelectorAll('.inc.on').forEach(x => x.classList.remove('on')); b.classList.add('on');
+      const i = byId[b.dataset.id]; map.flyTo({center: [i.lon, i.lat], zoom: Math.max(map.getZoom(), D.have_map ? 11 : 9.5)}); open(i.id);
+    }));
+    // Filters: search, caza, exact only, types. The list and the map follow the same choice.
+    const off = new Set();
+    const q = document.getElementById('q'), cz = document.getElementById('caza'), ex = document.getElementById('exact');
+    const count = document.getElementById('count'), nomatch = document.getElementById('nomatch');
+    const applyFilters = () => {
+      const words = q.value.toLowerCase().split(/\s+/).filter(Boolean);
+      const keep = D.incidents.filter(i => !off.has(i.type) && (!cz.value || i.caza === cz.value) && (!ex.checked || i.exact) &&
+        words.every(w => [i.id, i.loc, i.street, i.snip, i.typelabel].join(' ').toLowerCase().includes(w)));
+      const ids = new Set(keep.map(i => i.id));
+      document.querySelectorAll('.inc').forEach(b => { b.hidden = !ids.has(b.dataset.id); });
+      map.setFilter('incidents', ['in', ['get', 'id'], ['literal', [...ids]]]);
+      count.textContent = keep.length + ' of ' + D.incidents.length + ' shown';
+      nomatch.hidden = keep.length > 0 || !D.incidents.length;
+    };
+    q.addEventListener('input', applyFilters); cz.addEventListener('change', applyFilters); ex.addEventListener('change', applyFilters);
+    document.querySelectorAll('.type').forEach(b => b.addEventListener('click', () => {
+      const on = b.getAttribute('aria-pressed') === 'true';
+      b.setAttribute('aria-pressed', on ? 'false' : 'true');
+      on ? off.add(b.dataset.type) : off.delete(b.dataset.type);
+      applyFilters();
     }));
 
     // Road name / number on hover.
     const roadLayers = map.getStyle().layers.filter(l => l['source-layer'] === 'roads' && l.type === 'line').map(l => l.id);
+    if (roadLayers.length) {
     const tip = document.createElement('div'); tip.className = 'tip'; tip.setAttribute('role', 'tooltip');
     document.getElementById('map').appendChild(tip);
     map.on('mousemove', e => {
@@ -348,6 +423,7 @@ if (D.have_map) {
       tip.style.left = (e.point.x + 14) + 'px'; tip.style.top = (e.point.y + 14) + 'px'; tip.style.display = 'block';
     });
     map.on('mouseout', () => { tip.style.display = 'none'; });
+    }
     // ---- MGRS grid, live readout and click-to-copy ----
     const G = window.SirensMGRS;
     map.addSource('mgrs', {type: 'geojson', data: {type: 'FeatureCollection', features: []}});
@@ -385,11 +461,7 @@ if (D.have_map) {
       ro.className = 'readout'; ro.replaceChildren('MGRS ', Object.assign(document.createElement('b'), {textContent: refAt(e.lngLat)}), ' · click to copy');
     });
     map.getCanvas().addEventListener('mouseleave', () => { if (Date.now() >= copiedUntil) { ro.className = 'readout'; ro.textContent = idle; } });
-    const copy = async text => {
-      try { await navigator.clipboard.writeText(text); return true; } catch (err) {
-        const t = Object.assign(document.createElement('textarea'), {value: text}); document.body.appendChild(t); t.select();
-        const ok = document.execCommand('copy'); t.remove(); return ok; }
-    };
+    const copy = copyText;
     map.on('click', async e => {
       if (map.queryRenderedFeatures(e.point, {layers: ['incidents']}).length) return;   // a marker opens its popup instead
       const ref = refAt(e.lngLat), ok = await copy(ref);

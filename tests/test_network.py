@@ -44,7 +44,8 @@ def test_panel_matches_the_link_tree_clustering(client):
                 and ({l.a, l.b} - {"INC-041"}) <= set(cluster.members)), key=lambda l: l.score)
     band = "strong" if best.score >= 0.66 else "medium" if best.score >= 0.40 else "weak"
     assert f"({band})" in re.sub(r"</?strong>", "", html)
-    assert best.reasons[0] in html                                # the reasons are shown
+    from report_view import reason_label
+    assert reason_label(best.reasons[0]) in html                  # the reasons are shown, in words
     assert "not a conclusion" in html
 
 
